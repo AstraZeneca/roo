@@ -1,0 +1,23 @@
+[tool.rip]
+
+[[tool.rip.source]]
+name = "QS"
+url = "https://example.com"
+
+[[tool.rip.source]]
+name = "CRAN"
+url = "https://cloud.r-project.org/"
+
+[tool.rip.dependencies]
+haven = "1.0.0"
+shiny = "1.1.0"
+shinythemes = "1.1.1"
+shinyjs = "1.0"
+shinyWidgets = "0.5.0"
+officer = "0.3.2"
+ggplot2 = "3.0.0"
+future = "1.9.0"
+promises = "1.0.1"
+DT = "0.10"
+jskm = "0.3.8"
+maic = "1.0.0"

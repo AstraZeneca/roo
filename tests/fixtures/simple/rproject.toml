@@ -1,0 +1,15 @@
+[tool.rip]
+
+[[tool.rip.source]]
+name = "CRAN"
+url = "https://cloud.r-project.org/"
+
+[[tool.rip.source]]
+name = "QS"
+url = "https://cran.ma.imperial.ac.uk/"
+
+[tool.rip.dependencies]
+rlang = "0.4.2"
+
+[tool.rip.dev-dependencies]
+assertthat = "0.2.1"

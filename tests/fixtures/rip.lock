@@ -1,0 +1,1043 @@
+[[source]]
+name = "QS"
+url = "https://example.com"
+
+[[source]]
+name = "CRAN"
+url = "https://cloud.r-project.org/"
+
+[[package]]
+name = ""
+version = ""
+source = ""
+categories = []
+file = []
+dependencies = [ "DT", "future", "ggplot2", "haven", "jskm", "maic", "officer", "promises", "shiny", "shinyWidgets", "shinyjs", "shinythemes",]
+
+[[package]]
+name = "BH"
+version = "1.75.0-0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "BH_1.75.0-0.tar.gz"
+hash = "sha256:ae4c10992607dd697663f60675a46a5770851da159330bb63c4a68890bdd6f5a"
+
+
+[[package]]
+name = "DBI"
+version = "1.1.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "DBI_1.1.1.tar.gz"
+hash = "sha256:572ab3b8a6421d0ac3e7665c4c842826f1723af98fca25d4f43edb419e771344"
+
+
+[[package]]
+name = "DT"
+version = "0.10"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "crosstalk", "htmltools", "htmlwidgets", "jsonlite", "magrittr", "promises",]
+[[package.file]]
+name = "DT_0.10.tar.gz"
+hash = "sha256:3cc6dfc9697b52aef21d30dcfd355831c6216edcc6dd6bfb9a106cce6ab0906f"
+
+
+[[package]]
+name = "MASS"
+version = "7.3-53"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "MASS_7.3-53.tar.gz"
+hash = "sha256:41824e70ada302a620226c0f17b1b2c880c6d1a3a100b53bd6df8e8c97e64b38"
+
+
+[[package]]
+name = "Matrix"
+version = "1.3-2"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "lattice",]
+[[package.file]]
+name = "Matrix_1.3-2.tar.gz"
+hash = "sha256:950ba5d91018e711fd2743b3486a50dc47ae9c271389fce587792f0a9aab9531"
+
+
+[[package]]
+name = "R6"
+version = "2.5.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "R6_2.5.0.tar.gz"
+hash = "sha256:aec1af9626ec532cb883b544bf9eff4cb2d89c343c7ce0fa31761ec5a7882e02"
+
+
+[[package]]
+name = "RColorBrewer"
+version = "1.1-2"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "RColorBrewer_1.1-2.tar.gz"
+hash = "sha256:f3e9781e84e114b7a88eb099825936cc5ae7276bbba5af94d35adb1b3ea2ccdd"
+
+
+[[package]]
+name = "Rcpp"
+version = "1.0.6"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "Rcpp_1.0.6.tar.gz"
+hash = "sha256:c9f24756bc000f7a989bd4f9aa93d57f7739dcde77946703f8bb32332a35f012"
+
+
+[[package]]
+name = "assertthat"
+version = "0.2.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "assertthat_0.2.1.tar.gz"
+hash = "sha256:85cf7fcc4753a8c86da9a6f454e46c2a58ffc70c4f47cac4d3e3bcefda2a9e9f"
+
+
+[[package]]
+name = "base64enc"
+version = "0.1-3"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "base64enc_0.1-3.tar.gz"
+hash = "sha256:6d856d8a364bcdc499a0bf38bfd283b7c743d08f0b288174fba7dbf0a04b688d"
+
+
+[[package]]
+name = "cli"
+version = "2.3.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "assertthat", "glue",]
+[[package.file]]
+name = "cli_2.3.0.tar.gz"
+hash = "sha256:5898154204c948a9deabe97fd7b6a531fc1c829f2b3bc27a9cb601ddd6e80b89"
+
+
+[[package]]
+name = "clipr"
+version = "0.7.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "clipr_0.7.1.tar.gz"
+hash = "sha256:ffad477b07847e3b68f7e4406bbd323025a8dae7e3c768943d4d307ee3248afb"
+
+
+[[package]]
+name = "codetools"
+version = "0.2-18"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "codetools_0.2-18.tar.gz"
+hash = "sha256:1a9ea6b9792dbd1688078455929385acc3a5e4bef945c77bec1261fa4a084c28"
+
+
+[[package]]
+name = "colorspace"
+version = "2.0-0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "colorspace_2.0-0.tar.gz"
+hash = "sha256:4e6a53af9918db282cefdc71eaa30f507d4d1d682bcfb74cb0dd68a0b282018e"
+
+
+[[package]]
+name = "cpp11"
+version = "0.2.6"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "cpp11_0.2.6.tar.gz"
+hash = "sha256:ff09b3fb254db73c34e2025754d2328c65d316e3872c0b7d4f74a3938e461185"
+
+
+[[package]]
+name = "crayon"
+version = "1.4.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "crayon_1.4.0.tar.gz"
+hash = "sha256:ade681cbdaeaa0790bdd6114fd03ce14e75c2f6e3a197ec1677462872b095dce"
+
+
+[[package]]
+name = "crosstalk"
+version = "1.1.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "R6", "htmltools", "jsonlite", "lazyeval",]
+[[package.file]]
+name = "crosstalk_1.1.1.tar.gz"
+hash = "sha256:ed3234f7f000fb607cc42e005d68be1dd598d95fa687a3f6e6b17ba38e36ccd8"
+
+
+[[package]]
+name = "data.table"
+version = "1.13.6"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "data.table_1.13.6.tar.gz"
+hash = "sha256:d50cdd4c4f89cabf83baa9114e49a3b8179f403c499d6e0be7791a44ffcd3e9b"
+
+
+[[package]]
+name = "deSolve"
+version = "1.28"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "deSolve_1.28.tar.gz"
+hash = "sha256:4c55ef4cae841df91034382d277b483985af120240f87af587ff82177fdb5a49"
+
+
+[[package]]
+name = "digest"
+version = "0.6.27"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "digest_0.6.27.tar.gz"
+hash = "sha256:f485f75122907da24c41d4a62c91a232f0c371befd2f77e973342a1bef00253f"
+
+
+[[package]]
+name = "dplyr"
+version = "1.0.3"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "R6", "ellipsis", "generics", "glue", "lifecycle", "magrittr", "rlang", "tibble", "tidyselect", "vctrs",]
+[[package.file]]
+name = "dplyr_1.0.3.tar.gz"
+hash = "sha256:28a1a9d87e99154d4d1542ef9da9fd70f869a173dc9709f4583a5770bae58441"
+
+
+[[package]]
+name = "ellipsis"
+version = "0.3.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "rlang",]
+[[package.file]]
+name = "ellipsis_0.3.1.tar.gz"
+hash = "sha256:4f8a15158dfc27cdc0f7554c7a61e92b02e4d70bfc3d968f01a99da2189b75db"
+
+
+[[package]]
+name = "fansi"
+version = "0.4.2"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "fansi_0.4.2.tar.gz"
+hash = "sha256:a2edf06cf8b91333a5df4990d50cdb35a63aa4b63c8c8ddf5bedcb499daafc44"
+
+
+[[package]]
+name = "farver"
+version = "2.0.3"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "farver_2.0.3.tar.gz"
+hash = "sha256:0e1590df79ec6078f10426411b96216b70568a4eaf3ffd84ca723add0ed8e5cc"
+
+
+[[package]]
+name = "flexsurv"
+version = "1.1.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "Rcpp", "deSolve", "mstate", "muhaz", "mvtnorm", "quadprog", "survival", "tibble", "tidyr",]
+[[package.file]]
+name = "flexsurv_1.1.1.tar.gz"
+hash = "sha256:d926ec371b3c0501f284c30ce0cf8bd5948f96d6c33cf6bd77f4de50760ef774"
+
+
+[[package]]
+name = "future"
+version = "1.9.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "digest", "globals", "listenv",]
+[[package.file]]
+name = "future_1.9.0.tar.gz"
+hash = "sha256:d807c19d85dc47a28dd391eab3d67b8d1b91070ffb26a8b2b987c6c447d0cd14"
+
+
+[[package]]
+name = "generics"
+version = "0.1.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "generics_0.1.0.tar.gz"
+hash = "sha256:ab71d1bdbb66c782364c61cede3c1186d6a94c03635f9af70d926e2c1ac88763"
+
+
+[[package]]
+name = "ggplot2"
+version = "3.0.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "MASS", "digest", "gtable", "lazyeval", "mgcv", "plyr", "reshape2", "rlang", "scales", "tibble", "viridisLite", "withr",]
+[[package.file]]
+name = "ggplot2_3.0.0.tar.gz"
+hash = "sha256:c768f5039ef684c3874a92210a975af52e74f00927ff31c31a73eb1fe139694d"
+
+
+[[package]]
+name = "globals"
+version = "0.14.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "codetools",]
+[[package.file]]
+name = "globals_0.14.0.tar.gz"
+hash = "sha256:203dbccb829ca9cc6aedb6f5e79cb126ea31f8dd379dff9111ec66e3628c32f3"
+
+
+[[package]]
+name = "glue"
+version = "1.4.2"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "glue_1.4.2.tar.gz"
+hash = "sha256:9f7354132a26e9a876428fa87629b9aaddcd558f9932328e6ac065b95b8ef7ad"
+
+
+[[package]]
+name = "gridExtra"
+version = "2.3"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "gtable",]
+[[package.file]]
+name = "gridExtra_2.3.tar.gz"
+hash = "sha256:81b60ce6f237ec308555471ae0119158b115463df696d2eca9b177ded8988e3b"
+
+
+[[package]]
+name = "gtable"
+version = "0.3.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "gtable_0.3.0.tar.gz"
+hash = "sha256:fd386cc4610b1cc7627dac34dba8367f7efe114b968503027fb2e1265c67d6d3"
+
+
+[[package]]
+name = "haven"
+version = "1.0.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "BH", "Rcpp", "hms", "readr", "tibble",]
+[[package.file]]
+name = "haven_1.0.0.tar.gz"
+hash = "sha256:b499df0fe8b5921970812e96749699aa8b25391c3d304a9e35353d527198d697"
+
+
+[[package]]
+name = "hms"
+version = "1.0.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "ellipsis", "lifecycle", "pkgconfig", "rlang", "vctrs",]
+[[package.file]]
+name = "hms_1.0.0.tar.gz"
+hash = "sha256:9704e903d724f0911d46e5ad18b469a7ed419c5b1f388bd064fd663cefa6c962"
+
+
+[[package]]
+name = "htmltools"
+version = "0.5.1.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "base64enc", "digest", "rlang",]
+[[package.file]]
+name = "htmltools_0.5.1.1.tar.gz"
+hash = "sha256:f0bfe72ffe330f3d6c9ead5857f3a4aef80e002e32558074a3e643f2ab67a4ba"
+
+
+[[package]]
+name = "htmlwidgets"
+version = "1.5.3"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "htmltools", "jsonlite", "yaml",]
+[[package.file]]
+name = "htmlwidgets_1.5.3.tar.gz"
+hash = "sha256:01a5833182cc224bd100be2815e57e67b524de9f2bb1542787b6e3d1303f0f29"
+
+
+[[package]]
+name = "httpuv"
+version = "1.5.5"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "BH", "R6", "Rcpp", "later", "promises",]
+[[package.file]]
+name = "httpuv_1.5.5.tar.gz"
+hash = "sha256:0be6c98927c7859d4bbfbbec8822c9f5e95352077d87640a76bc2ade07c83117"
+
+
+[[package]]
+name = "jskm"
+version = "0.3.8"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "ggplot2", "gridExtra", "plyr", "scales", "survey", "survival",]
+[[package.file]]
+name = "jskm_0.3.8.tar.gz"
+hash = "sha256:0ebff86149930f2addad2898489f8db20c90518ce48ed0d04cc17a453a0582fc"
+
+
+[[package]]
+name = "jsonlite"
+version = "1.7.2"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "jsonlite_1.7.2.tar.gz"
+hash = "sha256:06354b50435942f67ba264f79831e577809ef89e5f9a5a2201985396fe651fd2"
+
+
+[[package]]
+name = "labeling"
+version = "0.4.2"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "labeling_0.4.2.tar.gz"
+hash = "sha256:e022d79276173e0d62bf9e37d7574db65ab439eb2ae1833e460b1cff529bd165"
+
+
+[[package]]
+name = "later"
+version = "1.1.0.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "BH", "Rcpp", "rlang",]
+[[package.file]]
+name = "later_1.1.0.1.tar.gz"
+hash = "sha256:71baa7beae774a35a117e01d7b95698511c3cdc5eea36e29732ff1fe8f1436cd"
+
+
+[[package]]
+name = "lattice"
+version = "0.20-41"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "lattice_0.20-41.tar.gz"
+hash = "sha256:54ca557f0cb33df60eb10b883c2ed2847e061ddd57ed9b5dd7695149609d57b5"
+
+
+[[package]]
+name = "lazyeval"
+version = "0.2.2"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "lazyeval_0.2.2.tar.gz"
+hash = "sha256:d6904112a21056222cfcd5eb8175a78aa063afe648a562d9c42c6b960a8820d4"
+
+
+[[package]]
+name = "lifecycle"
+version = "0.2.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "glue", "rlang",]
+[[package.file]]
+name = "lifecycle_0.2.0.tar.gz"
+hash = "sha256:29746e8dee05d4e36f9c612e8c7a903a4f648a36b3b94c9776e518c38a412224"
+
+
+[[package]]
+name = "listenv"
+version = "0.8.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "listenv_0.8.0.tar.gz"
+hash = "sha256:fd2aaf3ff2d8d546ce33d1cb38e68401613975117c1f9eb98a7b41facf5c485f"
+
+
+[[package]]
+name = "magrittr"
+version = "2.0.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "magrittr_2.0.1.tar.gz"
+hash = "sha256:75c265d51cc2b34beb27040edb09823c7b954d3990a7a931e40690b75d4aad5f"
+
+
+[[package]]
+name = "maic"
+version = "1.0.0"
+source = "QS"
+categories = [ "main",]
+dependencies = [ "assertthat", "dplyr", "flexsurv", "metafor", "sandwich", "survival",]
+[[package.file]]
+name = "maic_1.0.0.tar.gz"
+hash = "sha256:41f710738a39f38383aa86465c79e92e54bcb72e21d87bcb2adbf7298ee38b62"
+
+
+[[package]]
+name = "metafor"
+version = "2.4-0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "Matrix", "nlme",]
+[[package.file]]
+name = "metafor_2.4-0.tar.gz"
+hash = "sha256:b64a678b762e91f1e0a6360b15e79fe19159b243c9f40ad9cc0be833bb4ba9ac"
+
+
+[[package]]
+name = "mgcv"
+version = "1.8-33"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "Matrix", "nlme",]
+[[package.file]]
+name = "mgcv_1.8-33.tar.gz"
+hash = "sha256:98cb7bac928e2c9564091a9af31e5d309305c6c5fcf96e8429c08925fe6f2bf4"
+
+
+[[package]]
+name = "mime"
+version = "0.9"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "mime_0.9.tar.gz"
+hash = "sha256:2ccf97d2940a09539dc051c7a9a1aee90ef04b34e9bc6c0b64b4435fb3c2fa80"
+
+
+[[package]]
+name = "minqa"
+version = "1.2.4"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "Rcpp",]
+[[package.file]]
+name = "minqa_1.2.4.tar.gz"
+hash = "sha256:cfa193a4a9c55cb08f3faf4ab09c11b70412523767f19894e4eafc6e94cccd0c"
+
+
+[[package]]
+name = "mitools"
+version = "2.4"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "DBI",]
+[[package.file]]
+name = "mitools_2.4.tar.gz"
+hash = "sha256:f204f3774e29d79810f579f128de892539518f2cbe6ed237e08c8e7283155d30"
+
+
+[[package]]
+name = "mstate"
+version = "0.3.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "RColorBrewer", "data.table", "lattice", "magrittr", "rlang", "survival", "viridis",]
+[[package.file]]
+name = "mstate_0.3.1.tar.gz"
+hash = "sha256:d1e04ce0fc274cd3c3ec3373b1a5523e6331706ef9d4a0a3b3cb2278ddb92386"
+
+
+[[package]]
+name = "muhaz"
+version = "1.2.6.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "survival",]
+[[package.file]]
+name = "muhaz_1.2.6.1.tar.gz"
+hash = "sha256:73ce8b6cf23a90613d19075cff6ec7b5b9ba1dbc7d0b4c885f7e40d3ff201023"
+
+
+[[package]]
+name = "munsell"
+version = "0.5.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "colorspace",]
+[[package.file]]
+name = "munsell_0.5.0.tar.gz"
+hash = "sha256:d0f3a9fb30e2b5d411fa61db56d4be5733a2621c0edf017d090bdfa5e377e199"
+
+
+[[package]]
+name = "mvtnorm"
+version = "1.1-1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "mvtnorm_1.1-1.tar.gz"
+hash = "sha256:e965dad5e93babb7ded25b5ebdbd52332191b61f897d68853a379a07620d45de"
+
+
+[[package]]
+name = "nlme"
+version = "3.1-151"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "lattice",]
+[[package.file]]
+name = "nlme_3.1-151.tar.gz"
+hash = "sha256:a2c626bad68bf582663005170d1b9d844a10dca8efb13597f15ffb4b1fe886ca"
+
+
+[[package]]
+name = "numDeriv"
+version = "2016.8-1.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "numDeriv_2016.8-1.1.tar.gz"
+hash = "sha256:d8c4d19ff9aeb31b0c628bd4a16378e51c1c9a3813b525469a31fe89af00b345"
+
+
+[[package]]
+name = "officer"
+version = "0.3.2"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "R6", "Rcpp", "base64enc", "digest", "htmltools", "magrittr", "uuid", "xml2", "zip",]
+[[package.file]]
+name = "officer_0.3.2.tar.gz"
+hash = "sha256:51fc58e17c5e257f06f14d62ead0e927277d3b743589a4247a25ba01538c6691"
+
+
+[[package]]
+name = "pillar"
+version = "1.4.7"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "cli", "crayon", "ellipsis", "fansi", "lifecycle", "rlang", "utf8", "vctrs",]
+[[package.file]]
+name = "pillar_1.4.7.tar.gz"
+hash = "sha256:cdedb2b2a4854e917f43b0c6379efefda9d7ff4e58dec2a3159a80ee8288f298"
+
+
+[[package]]
+name = "pkgconfig"
+version = "2.0.3"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "pkgconfig_2.0.3.tar.gz"
+hash = "sha256:330fef440ffeb842a7dcfffc8303743f1feae83e8d6131078b5a44ff11bc3850"
+
+
+[[package]]
+name = "plyr"
+version = "1.8.6"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "Rcpp",]
+[[package.file]]
+name = "plyr_1.8.6.tar.gz"
+hash = "sha256:ea55d26f155443e9774769531daa5d4c20a0697bb53abd832e891b126c935287"
+
+
+[[package]]
+name = "promises"
+version = "1.0.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "R6", "Rcpp", "later", "magrittr", "rlang",]
+[[package.file]]
+name = "promises_1.0.1.tar.gz"
+hash = "sha256:c2dbc7734adf009377a41e570dfe0d82afb91335c9d0ca1ef464b9bdcca65558"
+
+
+[[package]]
+name = "purrr"
+version = "0.3.4"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "magrittr", "rlang",]
+[[package.file]]
+name = "purrr_0.3.4.tar.gz"
+hash = "sha256:23ebc93bc9aed9e7575e8eb9683ff4acc0270ef7d6436cc2ef4236a9734840b2"
+
+
+[[package]]
+name = "quadprog"
+version = "1.5-8"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "quadprog_1.5-8.tar.gz"
+hash = "sha256:22128dd6b08d3516c44ff89276719ad4fe46b36b23fdd585274fa3a93e7a49cd"
+
+
+[[package]]
+name = "readr"
+version = "1.4.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "BH", "R6", "cli", "clipr", "cpp11", "crayon", "hms", "lifecycle", "rlang", "tibble",]
+[[package.file]]
+name = "readr_1.4.0.tar.gz"
+hash = "sha256:02b1188aab8b2bc3f3d2bba5b946bd299610e87f3f7660c88b60b444093c46b9"
+
+
+[[package]]
+name = "reshape2"
+version = "1.4.4"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "Rcpp", "plyr", "stringr",]
+[[package.file]]
+name = "reshape2_1.4.4.tar.gz"
+hash = "sha256:d88dcf9e2530fa9695fc57d0c78adfc5e361305fe8919fe09410b17da5ca12d8"
+
+
+[[package]]
+name = "rlang"
+version = "0.4.10"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "rlang_0.4.10.tar.gz"
+hash = "sha256:07530270c4c199f2b7efc5d57a476d99babd9d0c3388a02bb7d57fe312da3576"
+
+
+[[package]]
+name = "sandwich"
+version = "3.0-0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "zoo",]
+[[package.file]]
+name = "sandwich_3.0-0.tar.gz"
+hash = "sha256:828fe53b5e09db5015efd529b2db4dcd40251bce110fea7b0b219fa9ac36d529"
+
+
+[[package]]
+name = "scales"
+version = "1.1.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "R6", "RColorBrewer", "farver", "labeling", "lifecycle", "munsell", "viridisLite",]
+[[package.file]]
+name = "scales_1.1.1.tar.gz"
+hash = "sha256:40b2b66522f1f314a20fd09426011b0cdc9d16b23ee2e765fe1930292dd03705"
+
+
+[[package]]
+name = "shiny"
+version = "1.1.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "R6", "crayon", "digest", "htmltools", "httpuv", "jsonlite", "later", "mime", "promises", "rlang", "sourcetools", "xtable",]
+[[package.file]]
+name = "shiny_1.1.0.tar.gz"
+hash = "sha256:70b564cd1b0ba89bae10bc94c6a3b50bd8ffb1a7d85f4aa41b2949e0ea245c89"
+
+
+[[package]]
+name = "shinyWidgets"
+version = "0.5.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "htmltools", "jsonlite", "scales", "shiny",]
+[[package.file]]
+name = "shinyWidgets_0.5.0.tar.gz"
+hash = "sha256:ebfd17bc1db3f8503126cc349541e15e3f905e5e05bd55d637dc843a84333c84"
+
+
+[[package]]
+name = "shinyjs"
+version = "1.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "digest", "htmltools", "jsonlite", "shiny",]
+[[package.file]]
+name = "shinyjs_1.0.tar.gz"
+hash = "sha256:286b11136bc999738592d01f980e7db86930fb3216effc680688829865bc7f84"
+
+
+[[package]]
+name = "shinythemes"
+version = "1.1.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "shiny",]
+[[package.file]]
+name = "shinythemes_1.1.1.tar.gz"
+hash = "sha256:e6dfa2bd6f4a259feb54a9c910b21cfbb2b22efc4506d8e23007b75080074244"
+
+
+[[package]]
+name = "sourcetools"
+version = "0.1.7"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "sourcetools_0.1.7.tar.gz"
+hash = "sha256:47984406efb3b3face133979ccbae9fefb7360b9a6ca1a1c11473681418ed2ca"
+
+
+[[package]]
+name = "stringi"
+version = "1.5.3"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "stringi_1.5.3.tar.gz"
+hash = "sha256:224f1e8dedc962a676bc2e1f53016f6a129a0a38aa0f35daf6dece62ff714010"
+
+
+[[package]]
+name = "stringr"
+version = "1.4.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "glue", "magrittr", "stringi",]
+[[package.file]]
+name = "stringr_1.4.0.tar.gz"
+hash = "sha256:87604d2d3a9ad8fd68444ce0865b59e2ffbdb548a38d6634796bbd83eeb931dd"
+
+
+[[package]]
+name = "survey"
+version = "4.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "Matrix", "lattice", "minqa", "mitools", "numDeriv", "survival",]
+[[package.file]]
+name = "survey_4.0.tar.gz"
+hash = "sha256:b053f40f4cfa90507ca524f72d3b3a4b4869def52f11f907a14f1c6d90063de1"
+
+
+[[package]]
+name = "survival"
+version = "3.2-7"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "Matrix",]
+[[package.file]]
+name = "survival_3.2-7.tar.gz"
+hash = "sha256:5356cd73da7ecfda4042e8a8ae00d3531b106f7b39ca31a1843eadf288418a46"
+
+
+[[package]]
+name = "tibble"
+version = "3.0.6"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "cli", "crayon", "ellipsis", "fansi", "lifecycle", "magrittr", "pillar", "pkgconfig", "rlang", "vctrs",]
+[[package.file]]
+name = "tibble_3.0.6.tar.gz"
+hash = "sha256:fbfe2d281e398de93c7a6ac4e30a32509252378b6f3c6ad20fbe720eb07d8138"
+
+
+[[package]]
+name = "tidyr"
+version = "1.1.2"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "cpp11", "dplyr", "ellipsis", "glue", "lifecycle", "magrittr", "purrr", "rlang", "tibble", "tidyselect", "vctrs",]
+[[package.file]]
+name = "tidyr_1.1.2.tar.gz"
+hash = "sha256:08fccb67824515b33187886f3ca2cf2fe747a778514892dbbf5e565edf0dfd6c"
+
+
+[[package]]
+name = "tidyselect"
+version = "1.1.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "ellipsis", "glue", "purrr", "rlang", "vctrs",]
+[[package.file]]
+name = "tidyselect_1.1.0.tar.gz"
+hash = "sha256:e635ed381fb53f7a53c3fa36bb33e134a3273d272367de2a8d909c821be93893"
+
+
+[[package]]
+name = "utf8"
+version = "1.1.4"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "utf8_1.1.4.tar.gz"
+hash = "sha256:f6da9cadfc683057d45f54b43312a359cf96ec2731c0dda18a8eae31d1e31e54"
+
+
+[[package]]
+name = "uuid"
+version = "0.1-4"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "uuid_0.1-4.tar.gz"
+hash = "sha256:98e0249dda17434bfa209c2058e9911e576963d4599be9f7ea946e664f8ca93e"
+
+
+[[package]]
+name = "vctrs"
+version = "0.3.6"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "digest", "ellipsis", "glue", "rlang",]
+[[package.file]]
+name = "vctrs_0.3.6.tar.gz"
+hash = "sha256:df7d368c9f2d2ad14872ba2a09821ec4f5a8ad77c81a0b05e1f440e5ffebad25"
+
+
+[[package]]
+name = "viridis"
+version = "0.5.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "ggplot2", "gridExtra", "viridisLite",]
+[[package.file]]
+name = "viridis_0.5.1.tar.gz"
+hash = "sha256:ddf267515838c6eb092938133035cee62ab6a78760413bfc28b8256165701918"
+
+
+[[package]]
+name = "viridisLite"
+version = "0.3.0"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "viridisLite_0.3.0.tar.gz"
+hash = "sha256:780ea12e7c4024d5ba9029f3a107321c74b8d6d9165262f6e64b79e00aa0c2af"
+
+
+[[package]]
+name = "withr"
+version = "2.4.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "withr_2.4.1.tar.gz"
+hash = "sha256:5f5ed9058d51b676f8b170b32bc0952ace6790e038f2b6d6860c5bb94f67178f"
+
+
+[[package]]
+name = "xml2"
+version = "1.3.2"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "xml2_1.3.2.tar.gz"
+hash = "sha256:df22f9e7e3189d8c9b8804eaf0105324fdac983cffe743552f6d76613600a4cf"
+
+
+[[package]]
+name = "xtable"
+version = "1.8-4"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "xtable_1.8-4.tar.gz"
+hash = "sha256:5abec0e8c27865ef0880f1d19c9f9ca7cc0fd24eadaa72bcd270c3fb4075fd1c"
+
+
+[[package]]
+name = "yaml"
+version = "2.2.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "yaml_2.2.1.tar.gz"
+hash = "sha256:1115b7bc2a397fa724956eec916df5160c600c99a3be186d21558dd38d782783"
+
+
+[[package]]
+name = "zip"
+version = "2.1.1"
+source = "CRAN"
+categories = [ "main",]
+dependencies = []
+[[package.file]]
+name = "zip_2.1.1.tar.gz"
+hash = "sha256:11dd417932296d3a25c53aa8d3b908973c4945a496cc473dd321825dfaaa7c2c"
+
+
+[[package]]
+name = "zoo"
+version = "1.8-8"
+source = "CRAN"
+categories = [ "main",]
+dependencies = [ "lattice",]
+[[package.file]]
+name = "zoo_1.8-8.tar.gz"
+hash = "sha256:4e8cc4065047ba12e103b9664f3b607c770673096e9c2b694fad2b2ec3203ce7"
+
+
+[metadata]
+content_hash = "6d00d06f47e40cf75c39d85efb746589d5b5149663fc7931daa5fc0a0184fbb9"
+conservative = false
+version = 1

@@ -1,0 +1,7 @@
+*.pyc
+*.egg-info
+.idea
+docs/sphinx/_build
+venv
+dist
+.DS_Store

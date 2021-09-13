@@ -1,0 +1,22 @@
+[tool.rip]
+name = "mytool"
+version = "0.1.0"
+title = "This is my tool"
+description = "There are many other like this but this one is mine"
+env-id = "ENV-0000"
+authors = ["Author"]
+maintainers = ["Maintainer"]
+
+[[tool.rip.source]]
+name = "CRAN"
+url = "https://cloud.r-project.org/"
+
+[[tool.rip.source]]
+name = "QS"
+url = "https://cran.ma.imperial.ac.uk/"
+
+[tool.rip.dependencies]
+rlang = "0.4.2"
+
+[tool.rip.dev-dependencies]
+assertthat = "0.2.1"

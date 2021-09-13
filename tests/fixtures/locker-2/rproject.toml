@@ -1,0 +1,21 @@
+[tool.rip]
+
+[[tool.rip.source]]
+name = "QS"
+url = "https://cran.ma.imperial.ac.uk/"
+
+[[tool.rip.source]]
+name = "CRAN"
+url = "https://cloud.r-project.org/"
+
+[tool.rip.dependencies]
+git2r = "0.27.1"
+cli = "2.0.1"
+shiny = "*"
+
+[tool.rip.dev-dependencies]
+devtools = "2.2.1"
+testthat = "2.3.2"
+
+[tool.rip.doc-dependencies]
+pkgdown = "1.5.1"
