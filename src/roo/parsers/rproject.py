@@ -83,7 +83,7 @@ class RProject:
         self.sources: List[Source] = []
         self.residual_data: Dict = {}
 
-    # Contains the original file data, purged of the tool.rip section.
+    # Contains the original file data, purged of the tool.roo section.
     # Used to reconstruct the original file.
 
     ALL_DEPENDENCY_CATEGORIES = ["main", "dev", "doc"]
@@ -149,13 +149,13 @@ class RProject:
             data = _read_fileobj(fileobj_or_path)
             path = None
 
-        section = _pop_rip_section(data)
+        section = _pop_roo_section(data)
 
         rproject = cls()
         rproject.path = path
         rproject.residual_data = data
 
-        _parse_rip_section(rproject, section)
+        _parse_roo_section(rproject, section)
 
         return rproject
 
@@ -168,7 +168,7 @@ class RProject:
 
         metadata = clean_dict(dataclasses.asdict(self.metadata))
         if len(metadata):
-            rproject_content.setdefault("tool", {})["rip"] = metadata
+            rproject_content.setdefault("tool", {})["roo"] = metadata
 
         sources = clean_list(
             [clean_dict(dataclasses.asdict(source))
@@ -178,7 +178,7 @@ class RProject:
         if len(sources):
             rproject_content.setdefault(
                 "tool", {}).setdefault(
-                "rip", {})["source"] = sources
+                "roo", {})["source"] = sources
 
         for category in self.ALL_DEPENDENCY_CATEGORIES:
             if category == "main":
@@ -198,7 +198,7 @@ class RProject:
             if len(deps_data):
                 rproject_content.setdefault(
                     "tool", {}).setdefault(
-                    "rip", {})[key] = deps_data
+                    "roo", {})[key] = deps_data
 
         with atomicwrites.atomic_write(self.path,
                                        encoding="utf-8",
@@ -206,7 +206,7 @@ class RProject:
             toml.dump(rproject_content, f)
 
 
-def _parse_rip_section(rproject: RProject, section: dict):
+def _parse_roo_section(rproject: RProject, section: dict):
     """
     Parses the relevant section from the data, and populates the
     rproject instance
@@ -227,7 +227,7 @@ def _parse_rip_section(rproject: RProject, section: dict):
         dependencies.extend(deps)
 
 
-def _dependencies_for_category(rip_section: dict, category: str) -> list:
+def _dependencies_for_category(roo_section: dict, category: str) -> list:
     """
     Returns all the dependencies for a given category in the dictionary section
     """
@@ -238,7 +238,7 @@ def _dependencies_for_category(rip_section: dict, category: str) -> list:
 
     deps: List[Dependency] = []
     try:
-        filedeps = rip_section[key]
+        filedeps = roo_section[key]
     except KeyError:
         return deps
 
@@ -280,11 +280,11 @@ def _read_fileobj(fileobj) -> Dict[str, Any]:
     return tomldata
 
 
-def _pop_rip_section(data: dict) -> dict:
-    """Pops the tool.rip section from the data.
+def _pop_roo_section(data: dict) -> dict:
+    """Pops the tool.roo section from the data.
     The data parameter gets modified in the operation"""
     try:
-        return cast(dict, data["tool"].pop("rip"))
+        return cast(dict, data["tool"].pop("roo"))
     except KeyError:
         return {}
 

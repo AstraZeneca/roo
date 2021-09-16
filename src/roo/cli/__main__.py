@@ -235,7 +235,7 @@ def package_dependencies(name, version):
     help="Produce no output")
 @click.option(
     "--overwrite", is_flag=True, default=False,
-    help="Force recreation of the rip.lock overwriting the current one")
+    help="Force recreation of the roo.lock overwriting the current one")
 @click.option(
     "--conservative", is_flag=True, default=False,
     help="Ensures that only minimal changes will be performed to the lock."
@@ -253,7 +253,7 @@ def _ensure_lock(overwrite, notifier, conservative) -> Lock:
         raise click.ClickException(
             "Unable to open rproject.toml in current directory"
         )
-    lock_path = pathlib.Path(".") / "rip.lock"
+    lock_path = pathlib.Path(".") / "roo.lock"
 
     if overwrite:
         try:

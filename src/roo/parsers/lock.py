@@ -149,7 +149,7 @@ class CoreLockEntry(LockEntry):
 
 
 class Lock:
-    """Represents a Lock. This is normally saved as a file called rip.lock
+    """Represents a Lock. This is normally saved as a file called roo.lock
     and represents a fixed set of versions of the various packages to install,
     as well as their dependencies so that they are installed in the proper
     order"""
@@ -239,7 +239,7 @@ class Lock:
             path = self.path
 
         if path is None:
-            path = pathlib.Path("rip.lock")
+            path = pathlib.Path("roo.lock")
 
         with atomicwrites.atomic_write(
                 path, encoding="utf-8", overwrite=True) as f:
