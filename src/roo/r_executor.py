@@ -44,7 +44,9 @@ class RExecutorBase:
 
         try:
             self._run_r(command)
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as e:
+            print(e.stdout)
+            print(e.stderr)
             raise ExecutorError(
                 f"Unable to install package {package_path}. "
                 f"Execution of command failed"
@@ -141,16 +143,19 @@ class RExecutorBase:
         stdout: Any
         stderr: Any
         if self.quiet:
-            stdout = None
-            stderr = None
+            stdout = subprocess.DEVNULL
+            stderr = subprocess.DEVNULL
         else:
             stdout = None
             stderr = None
 
         try:
-            subprocess.check_call(
+            subprocess.check_output(
                 [str(self.r_executable_path)] + command,
-                stdout=stdout, stderr=stderr, cwd=run_cwd)
+                stderr=subprocess.STDOUT,
+                encoding="utf-8",
+                cwd=self._run_cwd()
+            )
         except FileNotFoundError:
             raise ExecutorError(
                 f"Unable to execute {self.r_executable_path}. "
