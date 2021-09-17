@@ -16,7 +16,7 @@ class SourceCache:
     """
 
     def __init__(self, source_url: str):
-        self.root_dir = pathlib.Path("~/.rip/cache").expanduser()
+        self.root_dir = pathlib.Path("~/.roo/cache").expanduser()
         self.source_url = source_url
         self.base_dir.mkdir(parents=True, exist_ok=True)
 

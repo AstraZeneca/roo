@@ -21,7 +21,7 @@ class BuildCache:
                  root_dir: typing.Optional[pathlib.Path] = None):
 
         if root_dir is None:
-            root_dir = pathlib.Path("~/.rip/cache").expanduser()
+            root_dir = pathlib.Path("~/.roo/cache").expanduser()
 
         self.root_dir = root_dir
         self.r_version = r_version
