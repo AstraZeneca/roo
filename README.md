@@ -1,5 +1,6 @@
 # Roo - manages environments and dependencies in R
 
+![Status](https://github.com/AstraZeneca/roo/actions/workflows/python.yml/badge.svg)
 [![Maturity Level](https://img.shields.io/badge/Maturity%20Level-Under%20Development-orange)](https://img.shields.io/badge/Maturity%20Level-Under%20Development-orange)
 
 Roo is a python program that handles R dependencies and R environments, ensuring environment reproducibility
