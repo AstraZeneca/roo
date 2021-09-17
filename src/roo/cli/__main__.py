@@ -374,7 +374,7 @@ def cache():
 
 @cache.command(name="clear", help="Clear the cache completely")
 def cache_clear():
-    cache_root_dir = pathlib.Path("~/.rip/cache").expanduser()
+    cache_root_dir = pathlib.Path("~/.roo/cache").expanduser()
     notifier = UserNotifier()
     notifier.message("Clearing cache")
     try:
