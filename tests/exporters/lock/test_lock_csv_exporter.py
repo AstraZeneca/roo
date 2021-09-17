@@ -6,8 +6,8 @@ from roo.parsers.lock import Lock
 
 
 def test_lock_csv_export(fixture_file, tmpdir):
-    lockfile = Lock.parse(fixture_file("simple", "rip.lock"))
-    csv_file = pathlib.Path(tmpdir, "rip.csv")
+    lockfile = Lock.parse(fixture_file("simple", "roo.lock"))
+    csv_file = pathlib.Path(tmpdir, "roo.csv")
     LockCSVExporter().export(lockfile, csv_file)
 
     content = []

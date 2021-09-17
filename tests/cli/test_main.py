@@ -41,7 +41,7 @@ def test_environment_init(tmpdir):
 
 
 def test_cache_clear():
-    cache_dir = pathlib.Path("~/.rip/cache").expanduser()
+    cache_dir = pathlib.Path("~/.roo/cache").expanduser()
     cache_dir.mkdir(parents=True, exist_ok=True)
 
     with open(cache_dir / "testfile", "w") as f:
@@ -51,23 +51,23 @@ def test_cache_clear():
     res = runner.invoke(cache_clear)
     assert res.exit_code == 0
 
-    assert not pathlib.Path("~/.rip/cache/testfile").expanduser().exists()
+    assert not pathlib.Path("~/.roo/cache/testfile").expanduser().exists()
 
 
 def test_lock_overwrite(tmpdir):
     runner = CliRunner()
 
     with chdir(tmpdir):
-        lock_path = pathlib.Path(".") / "rip.lock"
+        lock_path = pathlib.Path(".") / "roo.lock"
         with open(lock_path, "w") as f:
             f.write("Test")
         assert lock_path.exists()
 
         toml_path = pathlib.Path(".") / "rproject.toml"
         with open(toml_path, "w") as f:
-            f.write("[tool.rip]\n")
+            f.write("[tool.roo]\n")
             f.write("repositories = []\n")
-            f.write("[tool.rip.dependencies]")
+            f.write("[tool.roo.dependencies]")
         assert toml_path.exists()
 
         result = runner.invoke(lock, ["--overwrite"])
@@ -80,7 +80,7 @@ def test_export_lock(fixture_file, tmpdir):
     with chdir(tmpdir):
         shutil.copyfile(fixture_file("simple", "rproject.toml"),
                         pathlib.Path(tmpdir) / "rproject.toml")
-        res = runner.invoke(export_lock, ["csv", "rip.csv"])
+        res = runner.invoke(export_lock, ["csv", "roo.csv"])
         assert res.exit_code == 0
 
 

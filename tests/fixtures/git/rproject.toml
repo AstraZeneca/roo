@@ -1,11 +1,11 @@
-[tool.rip]
+[tool.roo]
 name = "myproject"
 version = "0.1.0"
 
-[[tool.rip.source]]
+[[tool.roo.source]]
 name = "CRAN"
 url = "https://cloud.r-project.org/"
 
-[tool.rip.dependencies]
+[tool.roo.dependencies]
 survival = "3.2-7"
 qsuse = { git = "https://github.com/AstraZeneca/qscheck.git" }

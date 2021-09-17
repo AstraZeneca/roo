@@ -111,7 +111,7 @@ def test_rproject_new_file(tmpdir):
 
     rproject.save()
     with open(rproject.path, "r", encoding="utf-8") as f:
-        assert f.read() == """[tool.rip]
+        assert f.read() == """[tool.roo]
 name = \"mytool\"
 version = \"0.1.0\"
 authors = [ "Author",]
@@ -119,14 +119,14 @@ maintainers = [ "Maintainer",]
 env_id = \"ENV-0000\"
 title = \"This is my tool\"
 description = \"There are many other like this but this is mine\"
-[[tool.rip.source]]
+[[tool.roo.source]]
 name = "CRAN"
 url = "http://example.com/CRAN"
 
-[tool.rip.dependencies]
+[tool.roo.dependencies]
 foo = ">1.2.0"
 bar = "1.2.0"
 
-[tool.rip.dev-dependencies]
+[tool.roo.dev-dependencies]
 baz = "1.2.0"
 """

@@ -26,8 +26,8 @@ def test_installation_upgrade(tmpdir, fixture_file):
     cache = BuildCache(version_info["version"], version_info["platform"])
     cache.clear()
 
-    shutil.copy(fixture_file("simple", "rip.lock"), "rip.lock")
-    lock_file = Lock.parse(pathlib.Path("rip.lock"))
+    shutil.copy(fixture_file("simple", "roo.lock"), "roo.lock")
+    lock_file = Lock.parse(pathlib.Path("roo.lock"))
 
     installer = Installer()
     installer.install_lockfile(lock_file, env)
@@ -55,8 +55,8 @@ def test_installation_fails_for_missing_package(tmpdir, fixture_file):
     cache = BuildCache(version_info["version"], version_info["platform"])
     cache.clear()
 
-    shutil.copy(fixture_file("simple", "rip.lock"), "rip.lock")
-    lock_file = Lock.parse(pathlib.Path("rip.lock"))
+    shutil.copy(fixture_file("simple", "roo.lock"), "roo.lock")
+    lock_file = Lock.parse(pathlib.Path("roo.lock"))
     entry = lock_file.entries[2]
     assert isinstance(entry, SourceLockEntry)
     entry.version = "0.0.0"
@@ -78,8 +78,8 @@ def test_installation_fails_for_missing_r(tmpdir, fixture_file):
     cache = BuildCache(version_info["version"], version_info["platform"])
     cache.clear()
 
-    shutil.copy(fixture_file("simple", "rip.lock"), "rip.lock")
-    lock_file = Lock.parse(pathlib.Path("rip.lock"))
+    shutil.copy(fixture_file("simple", "roo.lock"), "roo.lock")
+    lock_file = Lock.parse(pathlib.Path("roo.lock"))
 
     installer = Installer(UserNotifier(True))
     with mock.patch("subprocess.check_call") as check_call_patched:
@@ -98,8 +98,8 @@ def test_install_with_wrong_sha(tmpdir, fixture_file):
     cache.clear()
 
     with chdir(tmpdir):
-        shutil.copy(fixture_file("simple", "rip.lock"), "rip.lock")
-        lock_file = Lock.parse(pathlib.Path("rip.lock"))
+        shutil.copy(fixture_file("simple", "roo.lock"), "roo.lock")
+        lock_file = Lock.parse(pathlib.Path("roo.lock"))
         entry = cast(SourceLockEntry, lock_file.entries[1])
         entry.files[0].hash = "sha256:12345"
         installer = Installer(UserNotifier(True))

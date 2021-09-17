@@ -1,14 +1,14 @@
-[tool.rip]
+[tool.roo]
 
-[[tool.rip.source]]
+[[tool.roo.source]]
 name = "QS"
 url = "https://example.com"
 
-[[tool.rip.source]]
+[[tool.roo.source]]
 name = "CRAN"
 url = "https://cloud.r-project.org/"
 
-[tool.rip.dependencies]
+[tool.roo.dependencies]
 haven = "1.0.0"
 shiny = "1.1.0"
 shinythemes = "1.1.1"

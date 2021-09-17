@@ -5,7 +5,7 @@ from roo.parsers.lock import Lock
 
 
 def test_lock_export(fixture_file, tmpdir):
-    lockfile = Lock.parse(fixture_file("simple", "rip.lock"))
+    lockfile = Lock.parse(fixture_file("simple", "roo.lock"))
     packrat_file = pathlib.Path(tmpdir, "packrat.lock")
     LockPackratExporter().export(lockfile, packrat_file)
 

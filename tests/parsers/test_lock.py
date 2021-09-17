@@ -6,12 +6,12 @@ from roo.parsers.rproject import Source
 
 
 def test_lock_parsing(fixture_file):
-    lockfile = Lock.parse(fixture_file("simple", "rip.lock"))
+    lockfile = Lock.parse(fixture_file("simple", "roo.lock"))
 
     assert len(lockfile.entries) == 3
     assert len(lockfile.sources) == 2
     assert lockfile.metadata.content_hash == "0403111a150fe98fb91ccf1f37fc86dd377ef6acd7083738d5596227dbf722a4"  # noqa
-    assert str(lockfile.path).endswith("rip.lock")
+    assert str(lockfile.path).endswith("roo.lock")
     assert len(lockfile.entries[1].files) == 1
 
 
@@ -28,9 +28,9 @@ def test_empty_lock():
 
 def test_empty_lock_save(tmpdir):
     lockfile = Lock()
-    assert not (tmpdir / "rip.lock").exists()
-    lockfile.save(tmpdir / "rip.lock")
-    assert (tmpdir / "rip.lock").exists()
+    assert not (tmpdir / "roo.lock").exists()
+    lockfile.save(tmpdir / "roo.lock")
+    assert (tmpdir / "roo.lock").exists()
 
 
 def test_populated_lock_save(tmpdir):
@@ -65,9 +65,9 @@ def test_populated_lock_save(tmpdir):
     ]
     lockfile.metadata.content_hash = "123"
     lockfile.metadata.conservative = False
-    lockfile.save(pathlib.Path(tmpdir / "rip.lock"))
+    lockfile.save(pathlib.Path(tmpdir / "roo.lock"))
 
-    lockfile_read = Lock.parse(pathlib.Path(tmpdir / "rip.lock"))
+    lockfile_read = Lock.parse(pathlib.Path(tmpdir / "roo.lock"))
 
     assert lockfile_read.metadata.content_hash == "123"
     assert not lockfile_read.metadata.conservative
@@ -144,8 +144,8 @@ def test_lock_dependencies(tmpdir):
         )
     ]
 
-    lockfile.save(pathlib.Path(tmpdir / "rip.lock"))
-    lockfile_read = Lock.parse(pathlib.Path(tmpdir / "rip.lock"))
+    lockfile.save(pathlib.Path(tmpdir / "roo.lock"))
+    lockfile_read = Lock.parse(pathlib.Path(tmpdir / "roo.lock"))
 
     assert lockfile_read.entries[0].name == "another"
     assert "base" in lockfile_read.entries[0].dependencies

@@ -1,4 +1,4 @@
-[tool.rip]
+[tool.roo]
 name = "mytool"
 version = "0.1.0"
 title = "This is my tool"
@@ -7,16 +7,16 @@ env-id = "ENV-0000"
 authors = ["Author"]
 maintainers = ["Maintainer"]
 
-[[tool.rip.source]]
+[[tool.roo.source]]
 name = "CRAN"
 url = "https://cloud.r-project.org/"
 
-[[tool.rip.source]]
+[[tool.roo.source]]
 name = "QS"
 url = "https://cran.ma.imperial.ac.uk/"
 
-[tool.rip.dependencies]
+[tool.roo.dependencies]
 rlang = "0.4.2"
 
-[tool.rip.dev-dependencies]
+[tool.roo.dev-dependencies]
 assertthat = "0.2.1"
