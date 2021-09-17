@@ -68,10 +68,10 @@ def rprofile_set_environment(
 
     if env_name is not None:
         content.extend([
-            "# >>> created by rip\n",
+            "# >>> created by roo\n",
             f'enabled_env <- "{env_name}"\n',
             'source(file.path(".envs", enabled_env, "init.R"))\n',
-            "# <<< created by rip\n"
+            "# <<< created by roo\n"
         ])
 
     with atomic_write(rprofile_path, overwrite=True) as f:  # type: ignore
@@ -81,18 +81,18 @@ def rprofile_set_environment(
 def _find_rprofile_marker_zone(content: list) -> Union[tuple, None]:
     """
     Find the start and stop index of the last occurrence of the
-    rip added section, and return them as a tuple. If it cannot find
+    roo added section, and return them as a tuple. If it cannot find
     any section, returns None
     """
     start_pos = None
     end_pos = None
 
     for idx, line in enumerate(content):
-        if line.startswith("# >>> created by rip"):
+        if line.startswith("# >>> created by roo"):
             if start_pos is not None:
                 end_pos = None
             start_pos = idx
-        elif line.startswith("# <<< created by rip"):
+        elif line.startswith("# <<< created by roo"):
             if start_pos is None:
                 continue
             end_pos = idx

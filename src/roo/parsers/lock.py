@@ -198,7 +198,7 @@ class Lock:
         if not cls._can_parse_version(version):
             raise ParsingError(
                 f"The current lock file version {version} "
-                "cannot be parsed by this version or rip."
+                "cannot be parsed by this version of roo."
             )
 
         self.path = original_path
