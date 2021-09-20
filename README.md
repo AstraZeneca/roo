@@ -1,6 +1,7 @@
 # Roo - manages environments and dependencies in R
 
-![Status](https://github.com/AstraZeneca/roo/actions/workflows/python.yml/badge.svg)
+![Build](https://github.com/AstraZeneca/roo/actions/workflows/python.yml/badge.svg)
+![Flake8](https://github.com/AstraZeneca/roo/actions/workflows/lint.yml/badge.svg)
 [![Maturity Level](https://img.shields.io/badge/Maturity%20Level-Under%20Development-orange)](https://img.shields.io/badge/Maturity%20Level-Under%20Development-orange)
 
 # Description
