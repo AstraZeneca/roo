@@ -14,6 +14,8 @@ from roo.user_notifier import UserNotifier
 from roo.parsers.lock import (
     Lock, SourceLockEntry, VCSLockEntry,
     RootLockEntry)
+from roo.locker import Locker
+from roo.parsers.rproject import RProject
 
 from tests.conftest import chdir
 
@@ -108,27 +110,18 @@ def test_install_with_wrong_sha(tmpdir, fixture_file):
             installer.install_lockfile(lock_file, env)
 
 
-def test_install_from_vcs(tmpdir):
-    lock = Lock()
-    lock.sources = [Source("CRAN", "https://cloud.r-project.org/")]
-    lock.entries = [
-        RootLockEntry(
-            categories=[],
-            dependencies=["qscheck"]
-        ),
-        VCSLockEntry(
-            name="qscheck",
-            vcs_type="git",
-            url="https://github.com/AstraZeneca/qscheck.git",  # noqa
-            ref="master",
-            categories=["main"],
-            dependencies=[]
-        )
-    ]
+def test_install_from_vcs(fixture_file, tmpdir):
+    rproject_file = fixture_file("git/rproject.toml")
+    with chdir(tmpdir):
+        shutil.copy(rproject_file, ".")
+        rproject = RProject.parse(pathlib.Path("rproject.toml"))
+        lock = Lock()
+        locker = Locker()
+        lock = locker.lock(rproject, lock, False)
 
-    installer = Installer(verbose_build=True)
-    env = Environment(pathlib.Path(str(tmpdir)), "test")
-    env.init()
+        installer = Installer(verbose_build=True)
+        env = Environment(pathlib.Path(str(tmpdir)), "test")
+        env.init()
 
-    installer.install_lockfile(lock, env)
-    assert env.has_package("qscheck")
+        installer.install_lockfile(lock, env)
+        assert env.has_package("qscheck")
