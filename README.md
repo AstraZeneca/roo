@@ -3,6 +3,8 @@
 ![Status](https://github.com/AstraZeneca/roo/actions/workflows/python.yml/badge.svg)
 [![Maturity Level](https://img.shields.io/badge/Maturity%20Level-Under%20Development-orange)](https://img.shields.io/badge/Maturity%20Level-Under%20Development-orange)
 
+# Description
+
 Roo is a python program that handles R dependencies and R environments, ensuring environment reproducibility
 that satisfy dependency constraints. If you are familiar with python poetry or pip it aims at being the same.
 
@@ -42,3 +44,11 @@ scientist you are unlikely to need Roo in your daily work, because Roo is
 mostly focused on production-level rather than exploratory coding. However, if time
 allows, an R interface will be written to at least install from a roo lock file.
 
+# Requirements and Installation
+
+Roo is written in python and requires python 3.8 or above. 
+It runs on any platform, and it can be installed from pypi with:
+
+    pip install roo
+
+Dependencies will be installed automatically.
