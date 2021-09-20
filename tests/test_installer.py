@@ -8,12 +8,9 @@ import pytest
 from roo.caches.build_cache import BuildCache
 from roo.environment import Environment
 from roo.installer import Installer, InstallationError
-from roo.parsers.rproject import Source
 from roo.sources.exceptions import PackageNotFoundError
 from roo.user_notifier import UserNotifier
-from roo.parsers.lock import (
-    Lock, SourceLockEntry, VCSLockEntry,
-    RootLockEntry)
+from roo.parsers.lock import Lock, SourceLockEntry
 from roo.locker import Locker
 from roo.parsers.rproject import RProject
 
