@@ -91,24 +91,12 @@ def test_dump_and_recreate_deptree(fixture_file, tmpdir):
 
         found = [x.name for x in traverse_depth_first(root)
                  if not isinstance(x, RootDependency)]
+        # Check at least the presence of the initial packages
         for entry in [
-            'git2r', 'cli', 'shiny', 'devtools', 'testthat', 'pkgdown',
-            'assertthat', 'crayon', 'glue', 'fansi', 'httpuv', 'mime',
-            'jsonlite', 'xtable', 'digest', 'htmltools', 'R6',
-            'sourcetools', 'later', 'promises', 'rlang', 'fastmap',
-            'withr', 'commonmark', 'usethis', 'callr', 'covr', 'desc',
-            'DT', 'ellipsis', 'httr', 'memoise', 'pkgbuild', 'pkgload',
-            'rcmdcheck', 'remotes', 'roxygen2', 'rstudioapi', 'rversions',
-            'sessioninfo', 'evaluate', 'magrittr', 'praise', 'fs',
-            'highlight', 'MASS', 'openssl', 'purrr', 'processx',
-            'rematch2', 'rmarkdown', 'tibble', 'whisker', 'xml2', 'yaml',
-            'Rcpp',
-            'base64enc', 'clipr', 'curl', 'gh', 'rprojroot', 'rex',
-            'htmlwidgets', 'crosstalk', 'prettyunits', 'xopen', 'brew',
-            'knitr',
-            'stringi', 'stringr', 'askpass', 'ps', 'tinytex', 'xfun',
-            'lifecycle',
-            'pillar', 'pkgconfig', 'vctrs', 'gitcreds', 'ini', 'lazyeval',
-                'highr', 'markdown', 'sys', 'utf8']:
-
+            'git2r', 'cli', 'shiny', 'devtools', 'testthat', 'pkgdown']:
             assert entry in found
+
+        # Test that the size of the found ones is larger than the basic
+        # packages above.
+
+        assert len(found) > 6

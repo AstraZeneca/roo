@@ -141,8 +141,8 @@ class RExecutorBase:
         stdout: Any
         stderr: Any
         if self.quiet:
-            stdout = None
-            stderr = None
+            stdout = subprocess.DEVNULL
+            stderr = subprocess.DEVNULL
         else:
             stdout = None
             stderr = None
