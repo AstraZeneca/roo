@@ -4,6 +4,27 @@ version = "0.11.0"
 description = "A package manager to handle R environments"
 authors = ["Stefano Borini <stefano.borini@astrazeneca.com>"]
 license = "Apache-2.0"
+keywords = [
+    "R",
+    "packaging",
+    "environment",
+    "validation",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software license",
+    "Programming Language :: Python",
+    "Programming Language :: R",
+    "Topic :: Software Development :: Build Tools",
+]    
+readme = "README.md"
+homepage = "https://github.com/AstraZeneca/roo"
+repository = "https://github.com/AstraZeneca/roo"
+include = [
+    "LICENSE.md"
+]
 packages = [
     { include = "roo", from = "src" },
 ]
