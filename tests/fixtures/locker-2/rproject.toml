@@ -10,7 +10,7 @@ url = "https://cloud.r-project.org/"
 
 [tool.roo.dependencies]
 git2r = "0.27.1"
-cli = "2.0.1"
+cli = "*"
 shiny = "*"
 
 [tool.roo.dev-dependencies]
