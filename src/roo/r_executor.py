@@ -22,8 +22,9 @@ class RExecutorBase:
     """Interface to R execution in a given environment, or to an
     executable by path detached from an environment"""
 
-    def __init__(self, quiet: bool):
+    def __init__(self, quiet: bool, use_vanilla: bool = False):
         self.quiet = quiet
+        self.use_vanilla = use_vanilla
 
     def install(self, package_path: pathlib.Path) -> None:
         """
@@ -128,8 +129,10 @@ class RExecutorBase:
     def _remove_options(self):
         raise NotImplementedError()
 
-    def _install_options(self):
-        raise NotImplementedError()
+    def _install_options(self) -> list:
+        if self.use_vanilla:
+            return ["--use-vanilla"]
+        return []
 
     def _run_cwd(self):
         raise NotImplementedError()
@@ -163,16 +166,13 @@ class RUnboundExecutor(RExecutorBase):
     environment.
     """
 
-    def __init__(self, r_executable_path: pathlib.Path, quiet: bool = False):
+    def __init__(self, r_executable_path: pathlib.Path, **kwargs):
         self._r_executable_path = r_executable_path
-        super().__init__(quiet=quiet)
+        super().__init__(**kwargs)
 
     @property
     def r_executable_path(self) -> pathlib.Path:
         return self._r_executable_path
-
-    def _install_options(self) -> list:
-        return []
 
     def _remove_options(self) -> list:
         return []
@@ -186,12 +186,14 @@ class RBoundExecutor(RExecutorBase):
     Interface to R execution in a given environment.
     """
 
-    def __init__(self, environment: Environment, quiet: bool = False):
+    def __init__(self, environment: Environment, **kwargs):
         self.environment = environment
-        super().__init__(quiet=quiet)
+        super().__init__(**kwargs)
 
     def _install_options(self) -> list:
-        return ["-l", str(self.environment.lib_reldir)]
+        options = super()._install_options()
+        options.extend(["-l", str(self.environment.lib_reldir)])
+        return options
 
     def _remove_options(self) -> list:
         return ["-l", str(self.environment.lib_reldir)]

@@ -177,9 +177,9 @@ class Environment:
 
         return desc.version
 
-    def executor(self) -> RBoundExecutor:
+    def executor(self, **options) -> RBoundExecutor:
         """Returns a R executor attached to the specified environment"""
-        return RBoundExecutor(self)
+        return RBoundExecutor(self, **options)
 
     @property
     def r_executable_path(self) -> pathlib.Path:

@@ -31,7 +31,8 @@ class Installer:
     def __init__(self,
                  notifier: Union[NotifierABC, None] = None,
                  verbose_build: bool = False,
-                 serial: bool = False):
+                 serial: bool = False,
+                 use_vanilla: bool = False):
         """
         Initialise the installer.
 
@@ -41,6 +42,7 @@ class Installer:
             verbose_build: Defines if the build should be verbose or not
             serial: Defines if the installation and build should be in serial,
                     or parallelised across multiple processes.
+            use_vanilla: specify --use-vanilla for CMD INSTALL
         """
         if notifier is None:
             notifier = NullNotifier()
@@ -48,6 +50,7 @@ class Installer:
         self._notifier = notifier
         self._verbose_build = verbose_build
         self._serial = serial
+        self._use_vanilla = use_vanilla
 
     def install_lockfile(self,
                          lockfile: Lock,
@@ -89,7 +92,8 @@ class Installer:
             else:
                 raise InstallationError(f"Unknown dependency {dep}")
 
-        # Then restart and do all the installing
+        # Then restart and do all the installing.
+        # XXX Not sure why I do it twice, but there might be a reason.
         plan = plan_generator(deptree, install_dep_categories)
         for dep in plan:
             if isinstance(dep, ResolvedVCSDependency):
@@ -150,8 +154,10 @@ class Installer:
         # time.
 
         installed_version = environment.package_version(dep.name)
-        executor = environment.executor()
-        executor.quiet = not self._verbose_build
+        executor = environment.executor(
+            quiet=not self._verbose_build,
+            use_vanilla=self._use_vanilla
+        )
 
         logger.info(
             f"Installing {dep.name} from VCS {dep.url}"
@@ -203,8 +209,10 @@ class Installer:
             return
 
         installed_version = environment.package_version(package.name)
-        executor = environment.executor()
-        executor.quiet = not self._verbose_build
+        executor = environment.executor(
+            quiet=not self._verbose_build,
+            use_vanilla=self._use_vanilla
+        )
         version_info = environment.r_version_info
         cache = BuildCache(version_info["version"], version_info["platform"])
 
