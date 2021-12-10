@@ -4,7 +4,7 @@ import textwrap
 
 import pytest
 
-from roo.environment import Environment
+from roo.environment import Environment, ExistentEnvironment
 from roo.files.rprofile import rprofile_current_environment, \
     rprofile_set_environment, _find_rprofile_marker_zone
 from roo.installer import Installer
@@ -26,8 +26,11 @@ def test_create_environment(tmpdir):
     assert env.exists()
     assert (pathlib.Path(tmpdir) / ".envs" / "hello").is_dir()
 
-    with pytest.raises(IOError):
+    with pytest.raises(ExistentEnvironment):
         env.init()
+
+    with pytest.raises(ValueError):
+        Environment(base_dir=pathlib.Path(tmpdir), name="")
 
 
 def test_enable(tmpdir):

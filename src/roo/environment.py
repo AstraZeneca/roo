@@ -20,6 +20,10 @@ class UnexistentEnvironment(Exception):
     pass
 
 
+class ExistentEnvironment(Exception):
+    pass
+
+
 class Environment:
     """Describes an environment at a given directory.
     """
@@ -38,6 +42,9 @@ class Environment:
         self.base_dir = base_dir.absolute()
 
         # The name of the environment
+        if len(name) == 0:
+            raise ValueError("The environment name cannot be empty")
+
         self.name = name
 
     @property
@@ -114,8 +121,9 @@ class Environment:
 
         if self.exists():
             if not overwrite:
-                raise IOError(f"Environment {self.name} already existent in "
-                              + f"{self.base_dir}")
+                raise ExistentEnvironment(
+                    f"Environment {self.name} already existent in "
+                     + f"{self.base_dir}")
             self.remove()
 
         if r_executable_path is None:
