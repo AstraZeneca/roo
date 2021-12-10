@@ -123,7 +123,7 @@ class Environment:
             if not overwrite:
                 raise ExistentEnvironment(
                     f"Environment {self.name} already existent in "
-                     + f"{self.base_dir}")
+                    + f"{self.base_dir}")
             self.remove()
 
         if r_executable_path is None:
