@@ -40,8 +40,16 @@ class Environment:
         """
         # Contains always the absolute path of the environment base.
         self.base_dir = base_dir.absolute()
+        if name != name.strip():
+            raise ValueError(
+                "The environment name must not start or end with whitespace")
+
+        if "/" in name or "\\" in name:
+            raise ValueError(
+                "The environment name must not contain / or \\")
 
         # The name of the environment
+        name = name.strip()
         if len(name) == 0:
             raise ValueError("The environment name cannot be empty")
 
