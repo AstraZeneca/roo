@@ -29,8 +29,8 @@ logger = logging.getLogger(__file__)
 @click.option("-d", "--debug", is_flag=True, help="Show debug information")
 @click.version_option()
 def main(debug):
-    if debug:
-        logging.basicConfig(level=logging.INFO)
+    level = logging.INFO if debug else logging.CRITICAL
+    logging.basicConfig(level=level)
 
 
 @main.command(
@@ -77,9 +77,8 @@ def environment():
 def environment_init(base_dir, overwrite, r_executable_path, name):
     base_dir = pathlib.Path(base_dir)
 
-    env = Environment(base_dir=base_dir, name=name)
-
     try:
+        env = Environment(base_dir=base_dir, name=name)
         env.init(r_executable_path, overwrite)
     except Exception as e:
         logger.exception("Unable to initialise environment")
