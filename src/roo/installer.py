@@ -77,7 +77,7 @@ class Installer:
 
         self._notifier.message(
             f"Installing {', '.join(install_dep_categories)} "
-            f"dependencies from lockfile.")
+            f"dependencies from lockfile in environment {environment.name}.")
 
         deptree = lock_entries_to_deptree(source_group, lockfile.entries)
         # First do all the downloading required

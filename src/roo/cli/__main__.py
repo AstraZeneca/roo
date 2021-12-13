@@ -76,6 +76,7 @@ def environment():
 @click.argument("name", type=click.STRING, default="default")
 def environment_init(base_dir, overwrite, r_executable_path, name):
     base_dir = pathlib.Path(base_dir)
+    notifier = UserNotifier()
 
     try:
         env = Environment(base_dir=base_dir, name=name)
@@ -83,6 +84,8 @@ def environment_init(base_dir, overwrite, r_executable_path, name):
     except Exception as e:
         logger.exception("Unable to initialise environment")
         raise click.ClickException(f"Unable to initialise environment: {e}")
+
+    notifier.message(f"Initialised and enabled environment {name}")
 
 
 @environment.command(
@@ -286,7 +289,7 @@ def _ensure_lock(overwrite, notifier, conservative) -> Lock:
               type=click.Path(), default=".")
 @click.option("--env-name",
               help="The name of the environment to create",
-              type=click.STRING, default="default")
+              type=click.STRING, default=None)
 @click.option("--quiet",
               help="Disables output",
               is_flag=True, default=False)
@@ -338,10 +341,24 @@ def install(env_base_dir: Union[str, pathlib.Path],
 
     env_base_dir = pathlib.Path(env_base_dir)
 
+    enabled_env = enabled_environment(env_base_dir)
+    if enabled_env is not None:
+        if env_name is None:
+            # If we already have an environment enabled and no further
+            # specification of parameters, we keep using that env.
+            env = enabled_env
+        else:
+            # However, if the user specified a --env-name, we'll honor that
+            env = Environment(base_dir=env_base_dir, name=env_name)
+    else:
+        # Otherwise, we use the env as specified, using the defaults in case.
+        if env_name is None:
+            env_name = "default"
+        env = Environment(base_dir=env_base_dir, name=env_name)
+
     if env_r_executable_path is not None:
         env_r_executable_path = pathlib.Path(env_r_executable_path)
 
-    env = Environment(base_dir=env_base_dir, name=env_name)
     if not env.exists() or env_overwrite:
         try:
             env.init(r_executable_path=env_r_executable_path,
