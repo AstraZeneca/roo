@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 import logging
-from typing import List, cast, Optional
+from typing import List, cast, Optional, Union
 
 from .caches.vcs_store import VCSStore
 from .deptree.dependencies import (
@@ -79,17 +79,17 @@ class Resolver:
         dependencies, but only one level down.
         """
         # Copy it as we have to change it as we walk along the list
-        unresolved_deps = root.dependencies
         resolved_deps: List[StructuralDependency] = []
 
-        for unres in unresolved_deps:
-            resolved_dep = self._resolve_single_dep(unres, 0, False)
+        for unres in root.dependencies:
+            resolved_dep = self._resolve_single_dep(root, unres, 0, False)
             resolved_deps.append(resolved_dep)
 
         # At this point, we have a full first level resolution done.
         root.dependencies = resolved_deps
 
     def _resolve_single_dep(self,
+                            parent: Union[RootDependency, ResolvedDependency],
                             dep: StructuralDependency,
                             level: int,
                             report_resolve: bool
@@ -105,10 +105,13 @@ class Resolver:
             # We already found the dependency, but we need to add the
             # category if it's not already there, and to all the subtree
             # as well
-            if not self._check_constraints(resolved_dep, dep):
-                raise CannotResolveError(
-                    f"Unable to satisfy dependency {dep.name} "
-                    f"constraint")
+            if not self._check_constraints(parent, resolved_dep, dep):
+                msg = (
+                    f"Unable to satisfy subdependency {dep.name} constraint"
+                )
+                if not isinstance(parent, RootDependency):
+                    msg += f" for dependency {parent.name}."
+                raise CannotResolveError(msg)
 
             resolved_dep.add_categories_recursive(dep.categories)
             if report_resolve:
@@ -229,19 +232,22 @@ class Resolver:
 
     def _depth_first_resolve(self,
                              dependency: ResolvedDependency,
-                             level: int):
+                             level: int) -> None:
         """
-        Resolves the given dependency list and returns a list of resolved
-        dependencies. It is guaranteed that a resolved dependencies
-        subtree is also resolved in all its dependencies.
+        Resolves the tree emanated by the given dependency.
+        This function updates the dependency object. The resulting
+        new dependencies list will have resolved dependencies whose
+        subtrees are also fully resolved.
         """
         # Copy it as we have to change it as we walk along the list
         resolved_deps: List[StructuralDependency] = []
 
         logger.info(f"Doing depth first resolve on {dependency.name}")
 
-        for dep in dependency.dependencies:
-            resolved_dep = self._resolve_single_dep(dep, level, True)
+        for subdep in dependency.dependencies:
+            resolved_dep = self._resolve_single_dep(
+                dependency, subdep, level, True
+            )
             # Recurse
             self._depth_first_resolve(resolved_dep, level + 1)
 
@@ -250,10 +256,13 @@ class Resolver:
         dependency.dependencies = resolved_deps
 
     def _check_constraints(self,
+                           parent: Union[RootDependency, ResolvedDependency],
                            resolved: ResolvedDependency,
                            unresolved: UnresolvedDependency) -> bool:
-        """Checks if the resolved dependency satisfies the unresolved
-        dependency constraint."""
+        """
+        Checks if the resolved dependency satisfies the unresolved
+        dependency constraint.
+        """
 
         # The problem here is that this really depends on the type
         # of dependency we found in the cache, and the type of unresolved
@@ -265,23 +274,29 @@ class Resolver:
                 # so the version is non-ambiguous at the time of locking.
                 if not unresolved.constraint.allows(
                         Version.parse(resolved.package.version)):
-                    self.notifier.error(
-                        f"Unable to satisfy dependency constraint: "
+                    msg = (
+                        f"Unable to satisfy subdependency constraint: "
                         f"Already found dependency "
                         f"{resolved.package.name} "
                         f"{resolved.package.version} cannot "
                         f"satisfy constraint {unresolved.name} "
-                        f"{unresolved.constraint} for "
-                        f"package {resolved.package.name}")
+                        f"{unresolved.constraint}")
+                    if not isinstance(parent, RootDependency):
+                        msg += f" for dependency {parent.name}"
+                    self.notifier.error(msg)
                     return False
                 return True
             elif isinstance(resolved, ResolvedVCSDependency):
-                self.notifier.warning(
-                    f"Constrained unresolved dependency {unresolved.name} "
-                    f"has been resolved by VCS dependency {resolved.url}. "
+                msg = f"Constrained unresolved dependency {unresolved.name} "
+                if not isinstance(parent, RootDependency):
+                    msg += f"for package {parent.name} "
+                msg += (
+                    f"is resolved with VCS dependency {resolved.url}. "
                     f"At this stage, no assumptions can be made on the "
-                    f"actual version that will be downloaded at install. "
+                    f"actual version that will be downloaded at installation "
+                    f"time. "
                 )
+                self.notifier.warning(msg)
                 return True
             elif isinstance(resolved, ResolvedCoreDependency):
                 return True
@@ -304,6 +319,7 @@ class Resolver:
                         resolved_dep: ResolvedDependency,
                         level: int,
                         already_found: bool):
+        """Prints out that a dependency has been resolved to the user"""
         if isinstance(resolved_dep, ResolvedSourceDependency):
             version = (
                 resolved_dep.package.version
