@@ -300,8 +300,8 @@ def _ensure_lock(overwrite, notifier, conservative) -> Lock:
               is_flag=True, default=False)
 @click.option("--env-r-executable-path",
               help=("The path to the R executable to use if a new"
-                    "environment needs to be created. Ignored if the"
-                    "environment already exists."),
+                    " environment needs to be created. Ignored if the"
+                    " environment already exists."),
               type=click.Path(), default=None)
 @click.option("--category",
               help=(
@@ -319,7 +319,7 @@ def _ensure_lock(overwrite, notifier, conservative) -> Lock:
               default=False)
 @click.option("--use-vanilla",
               help=(
-                  "If specified, do not read any Renviron or Rprofile files."
+                  "If specified, do not run any Renviron or Rprofile files."
               ),
               is_flag=True,
               default=False)
