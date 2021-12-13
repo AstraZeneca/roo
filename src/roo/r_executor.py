@@ -22,7 +22,7 @@ class RExecutorBase:
     """Interface to R execution in a given environment, or to an
     executable by path detached from an environment"""
 
-    def __init__(self, quiet: bool, use_vanilla: bool = False):
+    def __init__(self, quiet: bool = False, use_vanilla: bool = False):
         self.quiet = quiet
         self.use_vanilla = use_vanilla
 

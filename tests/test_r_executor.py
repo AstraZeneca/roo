@@ -48,3 +48,18 @@ def test_quiet_build(tmpdir, fixture_file):
         executor.install(fixture_file("Rchecker"))
         assert check_call_patched.call_args[1]["stdout"] != subprocess.DEVNULL
         assert check_call_patched.call_args[1]["stderr"] != subprocess.DEVNULL
+
+
+def test_use_vanilla(tmpdir, fixture_file):
+    env = Environment(base_dir=pathlib.Path(tmpdir), name="hello")
+    executor = RBoundExecutor(environment=env, use_vanilla=True)
+
+    with mock.patch("subprocess.check_call") as check_call_patched:
+        executor.install(fixture_file("Rchecker"))
+        assert "--use-vanilla" in check_call_patched.call_args[0][0]
+
+    executor = RBoundExecutor(environment=env, use_vanilla=False)
+
+    with mock.patch("subprocess.check_call") as check_call_patched:
+        executor.install(fixture_file("Rchecker"))
+        assert "--use-vanilla" not in check_call_patched.call_args[0][0]
