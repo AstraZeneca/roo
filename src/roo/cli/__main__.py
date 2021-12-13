@@ -299,8 +299,8 @@ def _ensure_lock(overwrite, notifier, conservative) -> Lock:
               is_flag=True, default=False)
 @click.option("--env-r-executable-path",
               help=("The path to the R executable to use if a new"
-                    "environment needs to be created. Ignored if the"
-                    "environment already exists."),
+                    " environment needs to be created. Ignored if the"
+                    " environment already exists."),
               type=click.Path(), default=None)
 @click.option("--category",
               help=(
@@ -316,6 +316,12 @@ def _ensure_lock(overwrite, notifier, conservative) -> Lock:
               ),
               is_flag=True,
               default=False)
+@click.option("--use-vanilla",
+              help=(
+                  "If specified, do not run any Renviron or Rprofile files."
+              ),
+              is_flag=True,
+              default=False)
 def install(env_base_dir: Union[str, pathlib.Path],
             env_name: str,
             quiet: bool,
@@ -323,7 +329,8 @@ def install(env_base_dir: Union[str, pathlib.Path],
             env_overwrite: bool,
             env_r_executable_path: Union[str, pathlib.Path, None],
             category: list,
-            serial: bool):
+            serial: bool,
+            use_vanilla: bool):
 
     notifier = UserNotifier(quiet)
 
@@ -354,7 +361,8 @@ def install(env_base_dir: Union[str, pathlib.Path],
     installer = Installer(
         notifier,
         verbose_build=verbose_build,
-        serial=serial)
+        serial=serial,
+        use_vanilla=use_vanilla)
     try:
         installer.install_lockfile(
             lock_file,
