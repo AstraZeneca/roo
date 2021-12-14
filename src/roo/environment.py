@@ -5,8 +5,7 @@ import pathlib
 import shutil
 import platform
 import toml
-from .files.rprofile import rprofile_current_environment, \
-    rprofile_set_environment
+from .files.rprofile import RProfile
 
 from .parsers.description import Description
 from .parsers.exceptions import ParsingError
@@ -95,14 +94,14 @@ class Environment:
 
         rprofile_path = pathlib.Path(self.base_dir) / ".Rprofile"
         name = self.name if enabled else None
-        rprofile_set_environment(rprofile_path, name)
+        RProfile(rprofile_path).enabled_environment = name
 
     def is_enabled(self) -> bool:
         """
         Returns True if this environment is enabled, otherwise False.
         """
         rprofile_path = pathlib.Path(self.base_dir) / ".Rprofile"
-        return rprofile_current_environment(rprofile_path) == self.name
+        return RProfile(rprofile_path).enabled_environment == self.name
 
     def remove(self) -> None:
         """

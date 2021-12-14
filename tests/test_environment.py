@@ -1,12 +1,10 @@
 import pathlib
 import shutil
-import textwrap
 
 import pytest
 
 from roo.environment import Environment, ExistentEnvironment
-from roo.files.rprofile import rprofile_current_environment, \
-    rprofile_set_environment, _find_rprofile_marker_zone
+from roo.files.rprofile import RProfile
 from roo.installer import Installer
 from roo.parsers.lock import Lock
 from roo.r_executor import RBoundExecutor
@@ -58,8 +56,8 @@ def test_create_additional_environment(tmpdir):
     env = Environment(base_dir=pathlib.Path(tmpdir), name="hello")
     env.init()
 
-    assert rprofile_current_environment(
-        pathlib.Path(tmpdir, ".Rprofile")) == "hello"
+    assert RProfile(
+        pathlib.Path(tmpdir, ".Rprofile")).enabled_environment == "hello"
 
     env = Environment(base_dir=pathlib.Path(tmpdir), name="hello2")
     env.init()
@@ -67,8 +65,8 @@ def test_create_additional_environment(tmpdir):
     assert env.env_dir.exists()
     assert env.exists()
 
-    assert rprofile_current_environment(
-        pathlib.Path(tmpdir, ".Rprofile")) == "hello2"
+    assert RProfile(
+        pathlib.Path(tmpdir, ".Rprofile")).enabled_environment == "hello2"
 
 
 def test_has_package(tmpdir, fixture_file):
@@ -91,175 +89,6 @@ def test_executor(tmpdir):
     executor = env.executor()
     assert isinstance(executor, RBoundExecutor)
     assert executor.environment == env
-
-
-def test_rprofile_set_environment_with_existent_file(tmpdir):
-    rprofile_path = pathlib.Path(tmpdir, ".Rprofile")
-
-    with open(rprofile_path, "w") as f:
-        f.write("# A comment\n")
-
-    rprofile_set_environment(rprofile_path, "foobar")
-
-    with open(rprofile_path) as f:
-        content = f.read()
-
-    assert content == textwrap.dedent("""\
-    # A comment
-    # >>> created by roo
-    enabled_env <- "foobar"
-    source(file.path(".envs", enabled_env, "init.R"))
-    # <<< created by roo
-    """)
-
-
-def test_rprofile_set_environment_from_nonexistent_file(tmpdir):
-    rprofile_path = pathlib.Path(tmpdir, ".Rprofile")
-
-    rprofile_set_environment(rprofile_path, "foobar")
-
-    with open(rprofile_path) as f:
-        content = f.read()
-
-    assert content == textwrap.dedent("""\
-    # >>> created by roo
-    enabled_env <- "foobar"
-    source(file.path(".envs", enabled_env, "init.R"))
-    # <<< created by roo
-    """)
-
-
-def test_rprofile_set_environment_with_already_present_env(tmpdir):
-    rprofile_path = pathlib.Path(tmpdir, ".Rprofile")
-
-    with open(rprofile_path, "w") as f:
-        f.write(textwrap.dedent("""\
-            # This is comment before the old entry
-            # >>> created by roo
-            enabled_env <- "foobar"
-            source(file.path(".envs", enabled_env, "init.R"))
-            # <<< created by roo
-            # This is a comment after the old entry
-            """))
-
-    rprofile_set_environment(rprofile_path, "barbaz")
-
-    with open(rprofile_path) as f:
-        content = f.read()
-
-    assert content == textwrap.dedent("""\
-    # This is comment before the old entry
-    # This is a comment after the old entry
-    # >>> created by roo
-    enabled_env <- "barbaz"
-    source(file.path(".envs", enabled_env, "init.R"))
-    # <<< created by roo
-    """)
-
-
-def test_rprofile_set_environment_to_none(tmpdir):
-    rprofile_path = pathlib.Path(tmpdir, ".Rprofile")
-
-    with open(rprofile_path, "w") as f:
-        f.write(textwrap.dedent("""\
-            # This is comment before the old entry
-            # >>> created by roo
-            enabled_env <- "foobar"
-            source(file.path(".envs", enabled_env, "init.R"))
-            # <<< created by roo
-            # This is a comment after the old entry
-            """))
-
-    rprofile_set_environment(rprofile_path, None)
-
-    with open(rprofile_path) as f:
-        content = f.read()
-
-    assert content == textwrap.dedent("""\
-    # This is comment before the old entry
-    # This is a comment after the old entry
-    """)
-
-
-def test_rprofile_current_environment(tmpdir):
-    rprofile_path = pathlib.Path(tmpdir, ".Rprofile")
-
-    with open(rprofile_path, "w") as f:
-        f.write(textwrap.dedent("""\
-            # This is comment before the old entry
-            # >>> created by roo
-            enabled_env <- "foobar"
-            source(file.path(".envs", enabled_env, "init.R"))
-            # <<< created by roo
-            # This is a comment after the old entry
-            """))
-
-    assert rprofile_current_environment(rprofile_path) == "foobar"
-
-    with open(rprofile_path, "w") as f:
-        f.write(textwrap.dedent("""\
-            # This is comment before the old entry
-            # This is a comment after the old entry
-            """))
-
-    assert rprofile_current_environment(rprofile_path) is None
-
-
-def test_find_rprofile_marker_zone():
-    content = textwrap.dedent("""\
-        # This is comment before the old entry
-        # >>> created by roo
-        enabled_env <- "foobar"
-        source(file.path(".envs", enabled_env, "init.R"))
-        # <<< created by roo
-        # This is a comment after the old entry
-        """).splitlines()
-
-    assert _find_rprofile_marker_zone(content) == (1, 4)
-    assert _find_rprofile_marker_zone([]) is None
-
-    content = textwrap.dedent("""\
-        # This is comment before the old entry
-        # >>> created by roo
-        enabled_env <- "foobar"
-        source(file.path(".envs", enabled_env, "init.R"))
-        # <<< created by roo
-        # This is a comment after the old entry
-        # >>> created by roo
-        enabled_env <- "barbaz"
-        source(file.path(".envs", enabled_env, "init.R"))
-        # <<< created by roo
-        # This is the second end
-        """).splitlines()
-
-    assert _find_rprofile_marker_zone(content) == (6, 9)
-
-    content = textwrap.dedent("""\
-        # This is comment before the old entry
-        # >>> created by roo
-        enabled_env <- "foobar"
-        source(file.path(".envs", enabled_env, "init.R"))
-        # <<< created by roo
-        # This is a comment after the old entry
-        # >>> created by roo
-        enabled_env <- "barbaz"
-        source(file.path(".envs", enabled_env, "init.R"))
-        # This is the second end
-        """).splitlines()
-
-    assert _find_rprofile_marker_zone(content) is None
-
-    content = textwrap.dedent("""\
-        # Finds and end before a start
-        # <<< created by roo
-        # >>> created by roo
-        enabled_env <- "barbaz"
-        source(file.path(".envs", enabled_env, "init.R"))
-        # <<< created by roo
-        # This is the second end
-        """).splitlines()
-
-    assert _find_rprofile_marker_zone(content) == (2, 5)
 
 
 def test_environment_remove(tmpdir):

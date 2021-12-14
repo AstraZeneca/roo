@@ -1,81 +1,83 @@
 import pathlib
 import re
-from typing import Union
+from typing import Union, Optional
 
 from atomicwrites import atomic_write
 
 
-def rprofile_current_environment(
-        rprofile_path: pathlib.Path) -> Union[str, None]:
-    """
-    Gets the currently activated environment as defined in the current
-    Rprofile file. If the file does not exist, or no environment is activated,
-    returns None
+class RProfile:
+    def __init__(self, path: pathlib.Path):
+        self.path = path
 
-    Args:
-        rprofile_path: the path to the Rprofile file
+    @property
+    def enabled_environment(self) -> Optional[str]:
+        """
+        Gets the currently activated environment as defined in the current
+        Rprofile file. If the file does not exist, or no environment
+        is activated, returns None
 
-    Returns: the name of the activated environment or None
+        Returns: the name of the activated environment or None
 
-    """
-    if not rprofile_path.exists():
-        return None
+        """
+        if not self.path.exists():
+            return None
 
-    with open(rprofile_path, "r", encoding="utf-8") as f:
-        content = f.readlines()
+        try:
+            with open(self.path, "r", encoding="utf-8") as f:
+                content = f.readlines()
+        except FileNotFoundError:
+            return None
 
-    value = _find_rprofile_marker_zone(content)
+        value = _find_rprofile_marker_zone(content)
 
-    if value is None:
-        return None
+        if value is None:
+            return None
 
-    start, stop = value
-
-    env_name = None
-    for line in content[start:stop+1]:
-        m = re.match(r"^enabled_env\s*<-\s*\"(\w+)\"", line)
-        if m:
-            env_name = m.group(1)
-
-    return env_name
-
-
-def rprofile_set_environment(
-        rprofile_path: pathlib.Path, env_name: Union[str, None]) -> None:
-    """
-    Sets a given environment as enabled in a given rprofile
-    path. If the rprofile path does not exists, it will be
-    created. If it does exist, a chunk of code will be added
-    to the end of the file itself. The previous enabled environment
-    will be removed.
-
-    Args:
-        rprofile_path: the path to the Rprofile file
-        env_name: the name of the environment to activate. If None,
-                  no environment will be activated.
-    """
-
-    content = []
-    if rprofile_path.exists():
-        with open(rprofile_path, "r", encoding="utf-8") as f:
-            content = f.readlines()
-
-    value = _find_rprofile_marker_zone(content)
-
-    if value is not None:
         start, stop = value
-        content[start:stop+1] = []
 
-    if env_name is not None:
-        content.extend([
-            "# >>> created by roo\n",
-            f'enabled_env <- "{env_name}"\n',
-            'source(file.path(".envs", enabled_env, "init.R"))\n',
-            "# <<< created by roo\n"
-        ])
+        env_name = None
+        for line in content[start:stop+1]:
+            m = re.match(r"^enabled_env\s*<-\s*\"(\w+)\"", line)
+            if m:
+                env_name = m.group(1)
 
-    with atomic_write(rprofile_path, overwrite=True) as f:  # type: ignore
-        f.writelines(content)
+        return env_name
+
+    @enabled_environment.setter
+    def enabled_environment(self, env_name: Optional[str]):
+        """
+        Sets a given environment as enabled in a given rprofile
+        path. If the rprofile path does not exists, it will be
+        created. If it does exist, a chunk of code will be added
+        to the end of the file itself. The previous enabled environment
+        will be removed.
+
+        Args:
+            env_name: the name of the environment to activate. If None,
+                      no environment will be activated.
+        """
+
+        content = []
+        if self.path.exists():
+            with open(self.path, "r", encoding="utf-8") as f:
+                content = f.readlines()
+
+        value = _find_rprofile_marker_zone(content)
+
+        if value is not None:
+            start, stop = value
+            content[start:stop+1] = []
+
+        if env_name is not None:
+            content.extend([
+                "# >>> created by roo\n",
+                f'enabled_env <- "{env_name}"\n',
+                'source(file.path(".envs", enabled_env, "init.R"))\n',
+                "# <<< created by roo\n"
+            ])
+
+        with atomic_write(self.path, overwrite=True) as f:  # type: ignore
+            f.writelines(content)
 
 
 def _find_rprofile_marker_zone(content: list) -> Union[tuple, None]:
