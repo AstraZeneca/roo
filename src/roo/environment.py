@@ -1,3 +1,4 @@
+import textwrap
 import typing
 from typing import Union, List
 import logging
@@ -57,7 +58,13 @@ class Environment:
 
     @property
     def r_version_info(self) -> dict:
-        return self.executor().version_info
+        with open(self.env_dir / "renv.toml", "r", encoding="utf-8") as f:
+            data = toml.load(f)
+
+        return {
+            "version": data["r_version"],
+            "platform": data["r_platform"]
+        }
 
     @property
     def env_dir(self) -> pathlib.Path:
@@ -216,9 +223,63 @@ class Environment:
 
     def _create_initr(self):
         """Create an init.R file in case it doesn't exist"""
+        renv_path = self.env_reldir / "renv.toml"
+        code = textwrap.dedent(f"""
+            .parse_config_file <- function() {{
+                out <- list()
+                renv <- readLines('{renv_path.as_posix()}')
+                for (line_num in seq_along(renv)) {{
+                    line <- renv[[line_num]]
+                    m <- regmatches(
+                        line,
+                        regexec("(.+?)\\\\s*=\\\\s*(\\")(.+)(\\")",
+                        line, perl=TRUE)
+                    )
+
+                    key <- m[[1]][[2]]
+                    val <- m[[1]][[4]]
+                    out[[key]] <- val
+                }}
+
+                return(out)
+            }}
+            """
+                               )
+
+        code += textwrap.dedent(f"""
+            config <- .parse_config_file()
+
+            message(
+                paste0(
+                    'Using environment {self.name} ',
+                    '(R version: ', config$r_version, ', ',
+                    'platform: ', config$r_platform, ')'
+                )
+            )
+            if (config$r_platform != R.version$platform) {{
+                stop(
+                    paste(
+                        "Cannot use environment with current R platform",
+                        R.version$platform
+                    )
+                )
+            }}
+            current_r_version <- paste0(R.version$major, ".", R.version$minor)
+            if (config$r_version != current_r_version) {{
+                stop(
+                    paste(
+                        "Cannot use environment with current R version",
+                        current_r_version
+                    )
+                )
+            }}
+
+            .libPaths(c('{self.lib_reldir.as_posix()}'))
+
+            """)
+
         with open(self.env_dir / "init.R", "w", encoding="utf-8") as f:
-            f.write(f"message('Using environment {self.name}')\n")
-            f.write(f".libPaths(c('{self.lib_reldir.as_posix()}'))\n")
+            f.write(code)
 
     def _create_renv_config(self, r_executable_path):
         executor = RUnboundExecutor(r_executable_path=r_executable_path)
