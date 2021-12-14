@@ -1,5 +1,5 @@
 import typing
-from typing import Union
+from typing import Union, List
 import logging
 import pathlib
 import shutil
@@ -240,7 +240,10 @@ def available_environments(base_dir: pathlib.Path) -> typing.List[Environment]:
     """
     Returns a list of all available environments in base_dir
     """
-    environments = []
+    environments: List[Environment] = []
+    if not (base_dir / ".envs").exists():
+        return environments
+
     for entry in (base_dir / ".envs").iterdir():
         if not entry.is_dir():
             continue
