@@ -2,9 +2,13 @@ import pathlib
 import shutil
 
 from click.testing import CliRunner
-from roo.cli.__main__ import (
-    init, environment_init, cache_clear, lock, export_lock,
-    package_dependencies, install)
+from roo.cli.cache import cache_clear
+from roo.cli.environment import environment_init
+from roo.cli.export import export_lock
+from roo.cli.init import init
+from roo.cli.install import install
+from roo.cli.lock import lock
+from roo.cli.package import package_dependencies
 
 from tests.conftest import chdir
 
