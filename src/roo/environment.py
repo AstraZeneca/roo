@@ -247,32 +247,27 @@ class Environment:
 
         code += textwrap.dedent(f"""
             config <- .parse_config_file()
+            current_r_version <- paste0(R.version$major, ".", R.version$minor)
+
+            if (config$r_platform != R.version$platform ||
+                config$r_version != current_r_version) {{
+                stop(
+                    paste0(
+                        "Cannot use environment {self.name}. ",
+                        "Currently executing R (",
+                        current_r_version, " ", R.version$platform,
+                        ") is incompatible with environment (",
+                        config$r_version, " ", config$r_platform, ")"
+                    )
+                )
+            }}
 
             message(
                 paste0(
                     'Using environment {self.name} ',
-                    '(R version: ', config$r_version, ', ',
-                    'platform: ', config$r_platform, ')'
+                    '(R ', config$r_version, ' ', config$r_platform, ')'
                 )
             )
-            if (config$r_platform != R.version$platform) {{
-                stop(
-                    paste(
-                        "Cannot use environment with current R platform",
-                        R.version$platform
-                    )
-                )
-            }}
-            current_r_version <- paste0(R.version$major, ".", R.version$minor)
-            if (config$r_version != current_r_version) {{
-                stop(
-                    paste(
-                        "Cannot use environment with current R version",
-                        current_r_version
-                    )
-                )
-            }}
-
             .libPaths(c('{self.lib_reldir.as_posix()}'))
 
             """)
