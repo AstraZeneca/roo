@@ -1,6 +1,8 @@
+import re
+from xml.etree import ElementTree
 import textwrap
 import typing
-from typing import Union, List
+from typing import Union, List, Dict
 import logging
 import pathlib
 import shutil
@@ -142,12 +144,12 @@ class Environment:
 
         if r_executable_path is None:
             r_executable_path = _find_r_executable_path()
-        else:
-            if not r_executable_path.is_file():
-                raise FileNotFoundError(
-                    f"Specified R executable {r_executable_path} does not "
-                    f"exist or is not a file"
-                )
+
+        if not r_executable_path.is_file():
+            raise FileNotFoundError(
+                f"Specified R executable {r_executable_path} does not "
+                f"exist or is not a file"
+            )
 
         # create the new environment
         self.env_dir.mkdir(parents=True, exist_ok=False)
@@ -331,31 +333,30 @@ def enabled_environment(base_dir: pathlib.Path) -> Union[Environment, None]:
 
 def _find_r_executable_path() -> pathlib.Path:
     """
-    Finds the R installation available on the machine,
-    trying all possible options and just reverting to a simple "R"
-    invocation if all else fails.
+    Finds the R installation available on the machine.
+
     """
 
     plat = platform.system()
     candidates = []
     if plat == "Windows":
-        candidates = [
-            "C:\\Program Files\\R\\R-3.6.3\\bin\\R.exe",
-            "C:\\Program Files\\R\\R-3.6.0\\bin\\R.exe",
-        ]
         which = shutil.which("R.exe")
         if which is not None:
             candidates.append(which)
+        candidates.extend([
+            "C:\\Program Files\\R\\R-3.6.3\\bin\\R.exe",
+            "C:\\Program Files\\R\\R-3.6.0\\bin\\R.exe",
+        ])
     elif plat == "Linux":
-        candidates = ["/usr/local/bin/R"]
         which = shutil.which("R")
         if which is not None:
             candidates.append(which)
+        candidates.append("/usr/local/bin/R")
     elif plat == "Darwin":
-        candidates = ["/usr/local/bin/R"]
         which = shutil.which("R")
         if which is not None:
             candidates.append(which)
+        candidates.append("/usr/local/bin/R")
     else:
         raise RuntimeError(f"Unknown platform {plat}")
 
@@ -367,3 +368,78 @@ def _find_r_executable_path() -> pathlib.Path:
     raise FileNotFoundError(
         f"Unable to find an R installation at {candidates}"
     )
+
+
+_BASE_WINDOWS_R_INSTALL_PATH = pathlib.Path(r"C:\Program Files\R")
+_BASE_MACOS_R_INSTALL_PATH = pathlib.Path("/Library/Frameworks/R.framework/")
+
+
+def _find_all_installed_r() -> List[Dict]:
+    """Finds all available installed R, independently of the platform."""
+    plat = platform.system()
+    installed_r = []
+    if plat == "Windows":
+        try:
+            for entry in _BASE_WINDOWS_R_INSTALL_PATH.iterdir():
+                m = re.match(r"R-(\d+\.\d+\.\d+)", str(entry.name))
+                if m is not None:
+                    installed_r.append({
+                        "path": entry,
+                        "version": m.group(1),
+                        "active": True
+                    })
+        except FileNotFoundError:
+            pass
+    elif plat == "Darwin":
+        try:
+            for entry in (_BASE_MACOS_R_INSTALL_PATH / "Versions").iterdir():
+                if re.match(r"\d+\.\d+", str(entry.name)):
+                    version = _get_plist_version(
+                        entry / "Resources" / "Info.plist"
+                    )
+                    installed_r.append({
+                        "path": entry,
+                        "version": version,
+                        "active": False,
+                    })
+
+            runnable_version = _get_plist_version(
+                _BASE_MACOS_R_INSTALL_PATH / "Versions" /
+                "Current" / "Resources" / "Info.plist"
+            )
+
+            for r_entry in installed_r:
+                if r_entry["version"] == runnable_version:
+                    r_entry["active"] = True
+        except (FileNotFoundError, KeyError):
+            pass
+    elif plat == "Linux":
+        # which = shutil.which("R")
+        pass
+
+    return installed_r
+
+
+def _get_plist_version(path: pathlib.Path) -> str:
+    tree = ElementTree.parse(path)
+    root = tree.getroot()
+    if root.tag != "plist":
+        raise KeyError("Invalid plist file")
+
+    dict_ = root[0]
+    if dict_.tag != "dict":
+        raise KeyError("Invalid plist file")
+
+    found_version = False
+    for entry in dict_:
+        if found_version:
+            if entry.tag == "string":
+                if entry.text is None:
+                    raise KeyError("Invalid plist file")
+                return entry.text
+            else:
+                raise KeyError("Invalid plist file")
+        if entry.tag == "key" and entry.text == "CFBundleVersion":
+            found_version = True
+
+    raise KeyError("Invalid plist file")

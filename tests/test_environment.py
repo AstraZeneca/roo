@@ -1,9 +1,11 @@
 import pathlib
 import shutil
+from unittest import mock
 
 import pytest
 
-from roo.environment import Environment, ExistentEnvironment
+from roo.environment import Environment, ExistentEnvironment, \
+    _find_all_installed_r, _get_plist_version
 from roo.files.rprofile import RProfile
 from roo.installer import Installer
 from roo.parsers.lock import Lock
@@ -111,3 +113,54 @@ def test_version_info(tmpdir):
     env.init()
     assert "version" in env.r_version_info
     assert "platform" in env.r_version_info
+
+
+def test_find_all_installed_r(fixture_file):
+    with mock.patch("platform.system") as mock_system, \
+            mock.patch("roo.environment._BASE_WINDOWS_R_INSTALL_PATH",
+                       pathlib.Path(fixture_file(
+                           "r_installation_paths", "windows"))
+                       ):
+        mock_system.return_value = "Windows"
+
+        assert _find_all_installed_r() == [
+            {
+                "path": fixture_file(
+                    "r_installation_paths", "windows", "R-3.6.3"),
+                "version": "3.6.3",
+                "active": True
+            },
+            {
+                "path": fixture_file(
+                    "r_installation_paths", "windows", "R-3.6.0"),
+                "version": "3.6.0",
+                "active": True
+            },
+        ]
+
+    with mock.patch("platform.system") as mock_system, \
+            mock.patch("roo.environment._BASE_MACOS_R_INSTALL_PATH",
+                       pathlib.Path(fixture_file(
+                           "r_installation_paths", "macos"))
+                       ):
+        mock_system.return_value = "Darwin"
+
+        assert _find_all_installed_r() == [
+            {
+                "path": fixture_file(
+                    "r_installation_paths", "macos", "Versions", "3.6"),
+                "version": "3.6.0",
+                "active": True
+            },
+            {
+                "path": fixture_file(
+                    "r_installation_paths", "macos", "Versions", "4.1"),
+                "version": "4.1.2",
+                "active": False
+            },
+        ]
+
+
+def test_get_plist_version(fixture_file):
+    version = _get_plist_version(fixture_file("Info.plist"))
+    assert version == "3.6.0"

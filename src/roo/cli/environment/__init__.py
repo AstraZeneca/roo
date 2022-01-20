@@ -18,7 +18,7 @@ def environment():
 
 @environment.command(
     name="init",
-    help=("Initialises a new environment with a given name,"
+    help=("Initialises a new environment with a given name, "
           "or the name \"default\" if not specified.")
 )
 @click.option("--base-dir",
@@ -29,7 +29,7 @@ def environment():
               help="Overwrites the environment if already present.",
               is_flag=True, default=False)
 @click.option("--r-executable-path",
-              help="The path to the R executable to use",
+              help="The path to the R executable to use.",
               type=click.Path(), default=None)
 @click.argument("name", type=click.STRING, default="default")
 def environment_init(base_dir, overwrite, r_executable_path, name):
