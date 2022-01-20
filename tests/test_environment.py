@@ -5,7 +5,8 @@ from unittest import mock
 import pytest
 
 from roo.environment import Environment, ExistentEnvironment, \
-    _find_all_installed_r, _get_plist_version
+    _find_all_installed_r_homes, _get_plist_version, \
+    _find_highest_active_version
 from roo.files.rprofile import RProfile
 from roo.installer import Installer
 from roo.parsers.lock import Lock
@@ -123,16 +124,24 @@ def test_find_all_installed_r(fixture_file):
                        ):
         mock_system.return_value = "Windows"
 
-        assert _find_all_installed_r() == [
+        assert _find_all_installed_r_homes() == [
             {
-                "path": fixture_file(
+                "home_path": fixture_file(
                     "r_installation_paths", "windows", "R-3.6.3"),
+                "executable_path": fixture_file(
+                    "r_installation_paths", "windows", "R-3.6.3", "bin",
+                    "R.exe"
+                ),
                 "version": "3.6.3",
                 "active": True
             },
             {
-                "path": fixture_file(
+                "home_path": fixture_file(
                     "r_installation_paths", "windows", "R-3.6.0"),
+                "executable_path": fixture_file(
+                    "r_installation_paths", "windows", "R-3.6.0", "bin",
+                    "R.exe"
+                ),
                 "version": "3.6.0",
                 "active": True
             },
@@ -145,16 +154,22 @@ def test_find_all_installed_r(fixture_file):
                        ):
         mock_system.return_value = "Darwin"
 
-        assert _find_all_installed_r() == [
+        assert _find_all_installed_r_homes() == [
             {
-                "path": fixture_file(
+                "home_path": fixture_file(
                     "r_installation_paths", "macos", "Versions", "3.6"),
+                "executable_path": fixture_file(
+                    "r_installation_paths", "macos", "Versions", "3.6",
+                    "Resources", "bin", "R"),
                 "version": "3.6.0",
                 "active": True
             },
             {
-                "path": fixture_file(
+                "home_path": fixture_file(
                     "r_installation_paths", "macos", "Versions", "4.1"),
+                "executable_path": fixture_file(
+                    "r_installation_paths", "macos", "Versions", "4.1",
+                    "Resources", "bin", "R"),
                 "version": "4.1.2",
                 "active": False
             },
@@ -164,3 +179,24 @@ def test_find_all_installed_r(fixture_file):
 def test_get_plist_version(fixture_file):
     version = _get_plist_version(fixture_file("Info.plist"))
     assert version == "3.6.0"
+
+
+def test_find_highest_version(fixture_file):
+    with mock.patch("platform.system") as mock_system, \
+            mock.patch("roo.environment._BASE_WINDOWS_R_INSTALL_PATH",
+                       pathlib.Path(fixture_file(
+                           "r_installation_paths", "windows"))
+                       ):
+        mock_system.return_value = "Windows"
+
+        assert _find_highest_active_version() == {
+            "home_path": fixture_file(
+                "r_installation_paths", "windows", "R-3.6.3"
+            ),
+            "executable_path": fixture_file(
+                "r_installation_paths", "windows", "R-3.6.3", "bin",
+                "R.exe"
+            ),
+            "version": "3.6.3",
+            "active": True
+        }
