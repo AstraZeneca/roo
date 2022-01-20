@@ -1,6 +1,7 @@
+import re
+from xml.etree import ElementTree
 import textwrap
-import typing
-from typing import Union, List
+from typing import Union, List, Dict, cast
 import logging
 import pathlib
 import shutil
@@ -142,12 +143,12 @@ class Environment:
 
         if r_executable_path is None:
             r_executable_path = _find_r_executable_path()
-        else:
-            if not r_executable_path.is_file():
-                raise FileNotFoundError(
-                    f"Specified R executable {r_executable_path} does not "
-                    f"exist or is not a file"
-                )
+
+        if not r_executable_path.is_file():
+            raise FileNotFoundError(
+                f"Specified R executable {r_executable_path} does not "
+                f"exist or is not a file"
+            )
 
         # create the new environment
         self.env_dir.mkdir(parents=True, exist_ok=False)
@@ -206,8 +207,6 @@ class Environment:
     @property
     def r_executable_path(self) -> pathlib.Path:
         """Returns the R executable path to invoke for this environment.
-        For backward compatibility, if there is no configuration file
-        it will look for a reasonable path and use that.
         """
         try:
             with open(self.env_dir / "renv.toml", "r", encoding="utf-8") as f:
@@ -218,7 +217,7 @@ class Environment:
         try:
             return pathlib.Path(data["r_executable_path"])
         except KeyError:
-            return _find_r_executable_path()
+            raise KeyError("Unable to find executable path in renv.toml")
 
     def _create_initr(self):
         """Create an init.R file in case it doesn't exist"""
@@ -296,7 +295,7 @@ class Environment:
             }, f)
 
 
-def available_environments(base_dir: pathlib.Path) -> typing.List[Environment]:
+def available_environments(base_dir: pathlib.Path) -> List[Environment]:
     """
     Returns a list of all available environments in base_dir
     """
@@ -331,39 +330,148 @@ def enabled_environment(base_dir: pathlib.Path) -> Union[Environment, None]:
 
 def _find_r_executable_path() -> pathlib.Path:
     """
-    Finds the R installation available on the machine,
-    trying all possible options and just reverting to a simple "R"
-    invocation if all else fails.
+    Finds the R installation available on the machine.
     """
 
+    # The approach is that we try first to find the all installed homes
+    # and pick the highest active version. If nothing else works, we just
+    # use whatever which R returns.
+
+    active = _find_highest_active_version()
+
+    if active is not None:
+        return cast(pathlib.Path, active["executable_path"])
+
+    # Fallback on the result of the which command.
     plat = platform.system()
-    candidates = []
     if plat == "Windows":
-        candidates = [
-            "C:\\Program Files\\R\\R-3.6.3\\bin\\R.exe",
-            "C:\\Program Files\\R\\R-3.6.0\\bin\\R.exe",
-        ]
         which = shutil.which("R.exe")
-        if which is not None:
-            candidates.append(which)
-    elif plat == "Linux":
-        candidates = ["/usr/local/bin/R"]
-        which = shutil.which("R")
-        if which is not None:
-            candidates.append(which)
-    elif plat == "Darwin":
-        candidates = ["/usr/local/bin/R"]
-        which = shutil.which("R")
-        if which is not None:
-            candidates.append(which)
     else:
-        raise RuntimeError(f"Unknown platform {plat}")
+        which = shutil.which("R")
 
-    for candidate in candidates:
-        candidate_path = pathlib.Path(candidate)
-        if candidate_path.is_file():
-            return candidate_path
+    if which is None:
+        raise FileNotFoundError(
+            "Unable to find R executable path anywhere")
 
-    raise FileNotFoundError(
-        f"Unable to find an R installation at {candidates}"
-    )
+    return pathlib.Path(which)
+
+
+_BASE_WINDOWS_R_INSTALL_PATH = pathlib.Path(r"C:\Program Files\R")
+_BASE_MACOS_R_INSTALL_PATH = pathlib.Path("/Library/Frameworks/R.framework/")
+_BASE_LINUX_R_INSTALL_PATH = pathlib.Path("/usr/lib/R/")
+
+
+def _find_all_installed_r_homes() -> List[Dict]:
+    """Finds all available installed R homes.
+    The order is arbitrary and depends on filesystem ordering.
+    Priority must be decided outside.
+    """
+    plat = platform.system()
+    installed_r = []
+    if plat == "Windows":
+        try:
+            for entry in _BASE_WINDOWS_R_INSTALL_PATH.iterdir():
+                m = re.match(r"R-(\d+\.\d+\.\d+)", str(entry.name))
+                if m is not None:
+                    installed_r.append({
+                        "home_path": entry,
+                        "executable_path": entry / "bin" / "R.exe",
+                        "version": m.group(1),
+                        "active": True
+                    })
+        except FileNotFoundError:
+            pass
+    elif plat == "Darwin":
+        try:
+            for entry in (_BASE_MACOS_R_INSTALL_PATH / "Versions").iterdir():
+                if re.match(r"\d+\.\d+", str(entry.name)):
+                    version = _get_plist_version(
+                        entry / "Resources" / "Info.plist"
+                    )
+                    installed_r.append({
+                        "home_path": entry,
+                        "executable_path": entry / "Resources" / "bin" / "R",
+                        "version": version,
+                        "active": False,
+                    })
+
+            runnable_version = _get_plist_version(
+                _BASE_MACOS_R_INSTALL_PATH / "Versions" /
+                "Current" / "Resources" / "Info.plist"
+            )
+
+            for r_entry in installed_r:
+                if r_entry["version"] == runnable_version:
+                    r_entry["active"] = True
+        except (FileNotFoundError, KeyError):
+            pass
+    elif plat == "Linux":
+        try:
+            version = _get_rcmd_version(
+                _BASE_LINUX_R_INSTALL_PATH / "bin" / "Rcmd")
+            installed_r.append({
+                "home_path": _BASE_LINUX_R_INSTALL_PATH,
+                "executable_path": _BASE_LINUX_R_INSTALL_PATH / "bin" / "R",
+                "version": version,
+                "active": True,
+            })
+        except (FileNotFoundError, KeyError):
+            pass
+
+    return installed_r
+
+
+def _get_plist_version(path: pathlib.Path) -> str:
+    """Extract the current version from the macos plist file"""
+    tree = ElementTree.parse(path)
+    root = tree.getroot()
+    if root.tag != "plist":
+        raise KeyError("Invalid plist file")
+
+    dict_ = root[0]
+    if dict_.tag != "dict":
+        raise KeyError("Invalid plist file")
+
+    found_version = False
+    for entry in dict_:
+        if found_version:
+            if entry.tag == "string":
+                if entry.text is None:
+                    raise KeyError("Invalid plist file")
+                return entry.text
+            else:
+                raise KeyError("Invalid plist file")
+        if entry.tag == "key" and entry.text == "CFBundleVersion":
+            found_version = True
+
+    raise KeyError("Invalid plist file")
+
+
+def _get_rcmd_version(path: pathlib.Path) -> str:
+    """Extract the current version from the only place it can be found
+    on linux: the Rcmd file"""
+    with open(path) as f:
+        for line in f:
+            if line.startswith("R_VERSION"):
+                m = re.match(r"R_VERSION\s*=\s*(\d\.\d\.\d)", line)
+                if m is not None:
+                    version = m.group(1)
+                    return version
+
+    raise KeyError("Invalid plist file")
+
+
+def _find_highest_active_version() -> Union[Dict, None]:
+
+    active_homes = filter(lambda x: x["active"] is True,
+                          _find_all_installed_r_homes())
+
+    try:
+        highest_version = sorted(
+            active_homes,
+            key=lambda x: [int(i) for i in x["version"].split(".")],
+            reverse=True
+        )[0]
+        return highest_version
+    except KeyError:
+        return None
