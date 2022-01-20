@@ -362,7 +362,10 @@ _BASE_LINUX_R_INSTALL_PATH = pathlib.Path("/usr/lib/R/")
 
 
 def _find_all_installed_r_homes() -> List[Dict]:
-    """Finds all available installed R homes"""
+    """Finds all available installed R homes.
+    The order is arbitrary and depends on filesystem ordering.
+    Priority must be decided outside.
+    """
     plat = platform.system()
     installed_r = []
     if plat == "Windows":

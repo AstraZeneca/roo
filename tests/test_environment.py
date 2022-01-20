@@ -124,28 +124,30 @@ def test_find_all_installed_r(fixture_file):
                        ):
         mock_system.return_value = "Windows"
 
-        assert _find_all_installed_r_homes() == [
-            {
-                "home_path": fixture_file(
-                    "r_installation_paths", "windows", "R-3.6.3"),
-                "executable_path": fixture_file(
-                    "r_installation_paths", "windows", "R-3.6.3", "bin",
-                    "R.exe"
-                ),
-                "version": "3.6.3",
-                "active": True
-            },
-            {
-                "home_path": fixture_file(
-                    "r_installation_paths", "windows", "R-3.6.0"),
-                "executable_path": fixture_file(
-                    "r_installation_paths", "windows", "R-3.6.0", "bin",
-                    "R.exe"
-                ),
-                "version": "3.6.0",
-                "active": True
-            },
-        ]
+        installed = _find_all_installed_r_homes()
+        for entry in [
+                {
+                    "home_path": fixture_file(
+                        "r_installation_paths", "windows", "R-3.6.3"),
+                    "executable_path": fixture_file(
+                        "r_installation_paths", "windows", "R-3.6.3", "bin",
+                        "R.exe"
+                    ),
+                    "version": "3.6.3",
+                    "active": True
+                },
+                {
+                    "home_path": fixture_file(
+                        "r_installation_paths", "windows", "R-3.6.0"),
+                    "executable_path": fixture_file(
+                        "r_installation_paths", "windows", "R-3.6.0", "bin",
+                        "R.exe"
+                    ),
+                    "version": "3.6.0",
+                    "active": True
+                }]:
+
+            assert entry in installed
 
     with mock.patch("platform.system") as mock_system, \
             mock.patch("roo.environment._BASE_MACOS_R_INSTALL_PATH",
@@ -154,26 +156,28 @@ def test_find_all_installed_r(fixture_file):
                        ):
         mock_system.return_value = "Darwin"
 
-        assert _find_all_installed_r_homes() == [
-            {
-                "home_path": fixture_file(
-                    "r_installation_paths", "macos", "Versions", "3.6"),
-                "executable_path": fixture_file(
-                    "r_installation_paths", "macos", "Versions", "3.6",
-                    "Resources", "bin", "R"),
-                "version": "3.6.0",
-                "active": True
-            },
-            {
-                "home_path": fixture_file(
-                    "r_installation_paths", "macos", "Versions", "4.1"),
-                "executable_path": fixture_file(
-                    "r_installation_paths", "macos", "Versions", "4.1",
-                    "Resources", "bin", "R"),
-                "version": "4.1.2",
-                "active": False
-            },
-        ]
+        installed = _find_all_installed_r_homes()
+
+        for entry in [
+                {
+                    "home_path": fixture_file(
+                        "r_installation_paths", "macos", "Versions", "3.6"),
+                    "executable_path": fixture_file(
+                        "r_installation_paths", "macos", "Versions", "3.6",
+                        "Resources", "bin", "R"),
+                    "version": "3.6.0",
+                    "active": True
+                },
+                {
+                    "home_path": fixture_file(
+                        "r_installation_paths", "macos", "Versions", "4.1"),
+                    "executable_path": fixture_file(
+                        "r_installation_paths", "macos", "Versions", "4.1",
+                        "Resources", "bin", "R"),
+                    "version": "4.1.2",
+                    "active": False
+                }]:
+            assert entry in installed
 
 
 def test_get_plist_version(fixture_file):
