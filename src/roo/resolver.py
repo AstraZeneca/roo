@@ -216,7 +216,6 @@ class Resolver:
             vcs_type="git",
             url=unresolved.url,
             ref=unresolved.ref,
-            r_constraint=_constraint_list_to_object(package.r_constraint),
             categories=unresolved.categories,
             dependencies=subdep_list
         )

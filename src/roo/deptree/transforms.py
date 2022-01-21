@@ -59,7 +59,6 @@ def lock_entries_to_deptree(
                 url=entry.url,
                 ref=entry.ref,
                 categories=entry.categories,
-                r_constraint=parse_constraint(entry.r_constraint),
                 dependencies=[
                     UnresolvedDependency(
                         name=d,
@@ -147,7 +146,6 @@ def deptree_to_lock_entries(root: RootDependency) -> List[LockEntry]:
                     vcs_type=dependency.vcs_type,
                     url=dependency.url,
                     ref=dependency.ref,
-                    r_constraint=str(dependency.r_constraint),
                     dependencies=dependencies,
                     categories=dependency.categories
                 )

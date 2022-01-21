@@ -65,8 +65,6 @@ class ResolvedVCSDependency(ResolvedDependency):
     # the reference to checkout. If absent, just check out without
     # switching to a particular ref.
     ref: Optional[str]
-    # The constraint on the R version this dependency has
-    r_constraint: VersionConstraint
 
 
 @dataclasses.dataclass
