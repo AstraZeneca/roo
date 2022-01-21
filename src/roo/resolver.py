@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import pathlib
+import tempfile
 from collections import OrderedDict
 import logging
 from typing import List, cast, Optional, Union
 
-from .caches.vcs_store import VCSStore
 from .deptree.dependencies import (
     RootDependency, ResolvedDependency,
     ResolvedSourceDependency, ResolvedVCSDependency, ResolvedCoreDependency,
@@ -188,39 +189,40 @@ class Resolver:
         """Resolve a VCS unresolved dependency"""
         logger.info(f"Cloning {unresolved.name} from {unresolved.url}")
 
-        vcs_store = VCSStore(unresolved.url)
-        try:
-            vcs_clone_shallow(
-                unresolved.vcs_type,
-                unresolved.url,
-                unresolved.ref,
-                vcs_store.clone_dir(unresolved.ref))
-        except ValueError as e:
-            raise CannotResolveError(f"VCS clone failed: {e}") from None
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # name does not matter, as long as it does not exist
+            clone_dir = pathlib.Path(tmpdir) / "clone"
+            try:
+                vcs_clone_shallow(
+                    unresolved.vcs_type,
+                    unresolved.url,
+                    unresolved.ref,
+                    clone_dir)
+            except ValueError as e:
+                raise CannotResolveError(f"VCS clone failed: {e}") from None
 
-        package = DirPackage(vcs_store.clone_dir(unresolved.ref))
+            package = DirPackage(clone_dir)
 
-        # Extract the dependencies of the found package
-        subdep_list: List[StructuralDependency] = []
-        for subdep in package.dependencies:
-            logger.info(f" - {subdep.name}")
-            unresolved_subdep = UnresolvedConstrainedDependency(
-                name=subdep.name,
-                constraint=_adapt_constraint(subdep.constraint),
-                categories=unresolved.categories
+            # Extract the dependencies of the found package
+            subdep_list: List[StructuralDependency] = []
+            for subdep in package.dependencies:
+                logger.info(f" - {subdep.name}")
+                unresolved_subdep = UnresolvedConstrainedDependency(
+                    name=subdep.name,
+                    constraint=_adapt_constraint(subdep.constraint),
+                    categories=unresolved.categories
+                )
+                subdep_list.append(unresolved_subdep)
+
+            resolved_dep = ResolvedVCSDependency(
+                name=unresolved.name,
+                vcs_type="git",
+                url=unresolved.url,
+                ref=unresolved.ref,
+                categories=unresolved.categories,
+                dependencies=subdep_list
             )
-            subdep_list.append(unresolved_subdep)
 
-        resolved_dep = ResolvedVCSDependency(
-            name=unresolved.name,
-            vcs_type="git",
-            url=unresolved.url,
-            ref=unresolved.ref,
-            categories=unresolved.categories,
-            dependencies=subdep_list
-        )
-
-        vcs_store.clear_clone(unresolved.ref)
         return resolved_dep
 
     def _resolve_tree_depth_first(self, root: RootDependency) -> None:

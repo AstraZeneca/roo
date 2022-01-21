@@ -1,9 +1,9 @@
 import logging
 import pathlib
+import tempfile
 from typing import Union, List, cast, Generator
 
 from .caches.build_cache import BuildCache
-from .caches.vcs_store import VCSStore
 from .deptree.dependencies import ResolvedDependency, RootDependency, \
     ResolvedSourceDependency, ResolvedVCSDependency, ResolvedCoreDependency
 from .deptree.transforms import lock_entries_to_deptree
@@ -80,12 +80,11 @@ class Installer:
             f"dependencies from lockfile in environment {environment.name}.")
 
         deptree = lock_entries_to_deptree(source_group, lockfile.entries)
-        # First do all the downloading required
+        # First do all the downloading required, except for the VCS
+        # that are transient and we fetch them at the very last moment.
         plan = plan_generator(deptree, install_dep_categories)
         for dep in plan:
-            if isinstance(dep, ResolvedVCSDependency):
-                self._checkout_from_vcs(dep)
-            elif isinstance(dep, ResolvedSourceDependency):
+            if isinstance(dep, ResolvedSourceDependency):
                 self._ensure_local_source_package(dep)
             elif isinstance(dep, (RootDependency, ResolvedCoreDependency)):
                 pass
@@ -104,20 +103,6 @@ class Installer:
                 pass
             else:
                 raise InstallationError(f"Unknown dependency {dep}")
-
-    def _checkout_from_vcs(self, dep: ResolvedVCSDependency):
-        logger.info(f"Cloning {dep.name} from VCS {dep.url}")
-
-        cache = VCSStore(dep.url)
-        self._notifier.message(
-            f"- Cloning [package]{dep.name}[/package] "
-            f"from {dep.url}",
-            indent=2
-        )
-
-        cache.clear_clone(dep.ref)
-        vcs_clone_shallow(dep.vcs_type, dep.url, dep.ref,
-                          cache.clone_dir(dep.ref))
 
     def _ensure_local_source_package(self, dep: ResolvedSourceDependency):
         """Ensures that the packages have been downloaded
@@ -164,33 +149,30 @@ class Installer:
             f"in environment {environment.name}"
         )
 
-        vcs_store = VCSStore(dep.url)
-        logger.info(f"Using vcs store at {vcs_store.base_dir}")
-
-        try:
-            vcs_clone_shallow(
-                dep.vcs_type, dep.url, dep.ref, vcs_store.clone_dir(dep.ref)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # name does not matter, as long as it does not exist
+            clone_dir = pathlib.Path(tmpdir) / "clone"
+            logger.info(
+                f"Cloning from VCS {dep.url}@{dep.ref} to {clone_dir}"
             )
-        except ValueError as e:
-            raise InstallationError(f"VCS clone failed: {e}") from None
+            try:
+                vcs_clone_shallow(dep.vcs_type, dep.url, dep.ref, clone_dir)
+            except ValueError as e:
+                raise InstallationError(f"VCS clone failed: {e}") from None
 
-        op_str = ("Installing"
-                  if installed_version is None else "Replacing")
+            op_str = ("Installing"
+                      if installed_version is None else "Replacing")
 
-        self._notifier.message(
-            f"- {op_str} [package]{dep.name}[/package] ", indent=2)
+            self._notifier.message(
+                f"- {op_str} [package]{dep.name}[/package] ", indent=2)
 
-        if installed_version is not None:
-            executor.remove(dep.name)
+            if installed_version is not None:
+                executor.remove(dep.name)
 
-        try:
-            executor.install(vcs_store.clone_dir(dep.ref))
-        except ExecutorError as e:
-            raise InstallationError(f"Unable to install {dep.name}: {e}")
-
-        # Delete the cache only in case of success, so it's easier to check
-        # what went wrong in case of error.
-        vcs_store.clear_clone(dep.ref)
+            try:
+                executor.install(clone_dir)
+            except ExecutorError as e:
+                raise InstallationError(f"Unable to install {dep.name}: {e}")
 
         logger.info(
             f"Package {dep.name} successfully "
