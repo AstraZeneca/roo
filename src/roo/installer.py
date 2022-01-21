@@ -2,6 +2,8 @@ import logging
 import pathlib
 from typing import Union, List, cast, Generator
 
+from roo.semver import Version
+
 from .caches.build_cache import BuildCache
 from .caches.vcs_store import VCSStore
 from .deptree.dependencies import ResolvedDependency, RootDependency, \
@@ -80,7 +82,29 @@ class Installer:
             f"dependencies from lockfile in environment {environment.name}.")
 
         deptree = lock_entries_to_deptree(source_group, lockfile.entries)
-        # First do all the downloading required
+        # I am forced to go through the plan three times.
+        # First is to check that all R constraints are satisfied with the
+        # current version of R we are using, so we don't waste time building
+        # a doomed attempt
+        executor = environment.executor(
+            quiet=not self._verbose_build,
+            use_vanilla=self._use_vanilla
+        )
+        r_version = executor.version
+        plan = plan_generator(deptree, install_dep_categories)
+        for dep in plan:
+            if isinstance(dep, ResolvedSourceDependency):
+                if not (dep.r_constraint.allows(Version.parse(r_version))):
+                    self._notifier.error(
+                        f"Cannot install {dep.name} in environment "
+                        f"{environment.name}. "
+                        f"{dep.name} requires R {dep.r_constraint} but "
+                        f"environment is for R {r_version}"
+                    )
+                    raise InstallationError(f"R version violation for {dep}")
+
+        # Then do all the downloading required so that we get this over with
+        # and we can install freely
         plan = plan_generator(deptree, install_dep_categories)
         for dep in plan:
             if isinstance(dep, ResolvedVCSDependency):
@@ -93,7 +117,6 @@ class Installer:
                 raise InstallationError(f"Unknown dependency {dep}")
 
         # Then restart and do all the installing.
-        # XXX Not sure why I do it twice, but there might be a reason.
         plan = plan_generator(deptree, install_dep_categories)
         for dep in plan:
             if isinstance(dep, ResolvedVCSDependency):
