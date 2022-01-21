@@ -184,6 +184,7 @@ class Resolver:
             name=package.name,
             package=package,
             categories=unresolved.categories,
+            r_constraint=_constraint_list_to_object(package.r_constraint),
             dependencies=subdep_list
         )
 
@@ -215,6 +216,7 @@ class Resolver:
             vcs_type="git",
             url=unresolved.url,
             ref=unresolved.ref,
+            r_constraint=_constraint_list_to_object(package.r_constraint),
             categories=unresolved.categories,
             dependencies=subdep_list
         )
@@ -339,7 +341,7 @@ class Resolver:
                 indent=2 + 2 * level)
 
 
-def _adapt_constraint(constraint_list: list) -> VersionConstraint:
+def _constraint_list_to_object(constraint_list: list) -> VersionConstraint:
     """Converts the list of constraint into a VersionConstraint object"""
 
     constraint_string = ",".join(constraint_list)
@@ -365,7 +367,7 @@ def _extract_subdeps(package: PackageABC) -> List[StructuralDependency]:
         logger.info(f" - {subdep.name}")
         unresolved_subdep = UnresolvedConstrainedDependency(
             name=subdep.name,
-            constraint=_adapt_constraint(subdep.constraint),
+            constraint=_constraint_list_to_object(subdep.constraint),
             categories=[]
         )
         subdep_list.append(unresolved_subdep)

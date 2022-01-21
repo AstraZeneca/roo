@@ -1,5 +1,7 @@
 from typing import List, Dict, cast
 
+from roo.semver import parse_constraint
+
 from ..parsers.lock import LockEntry, RootLockEntry, SourceLockEntry, \
     VCSLockEntry, CoreLockEntry, PackageFile
 from .dependencies import RootDependency, ResolvedDependency, \
@@ -41,6 +43,7 @@ def lock_entries_to_deptree(
                 name=entry.name,
                 categories=entry.categories,
                 package=source_package,
+                r_constraint=parse_constraint(entry.r_constraint),
                 dependencies=[
                     UnresolvedDependency(
                         name=d,
@@ -56,6 +59,7 @@ def lock_entries_to_deptree(
                 url=entry.url,
                 ref=entry.ref,
                 categories=entry.categories,
+                r_constraint=parse_constraint(entry.r_constraint),
                 dependencies=[
                     UnresolvedDependency(
                         name=d,
@@ -99,10 +103,21 @@ def deptree_to_lock_entries(root: RootDependency) -> List[LockEntry]:
 
     lock_entries: List[LockEntry] = []
     for dependency in traverse_depth_first_unique(root):
+        if isinstance(dependency, ResolvedCoreDependency):
+            lock_entries.append(
+                CoreLockEntry(
+                    name=dependency.name,
+                    categories=dependency.categories,
+                    dependencies=[]
+                )
+            )
+            continue
+
+        dependencies = [
+            cast(ResolvedDependency, x).name
+            for x in cast(ResolvedDependency, dependency).dependencies]
+
         if isinstance(dependency, RootDependency):
-            dependencies = [
-                cast(ResolvedDependency, x).name
-                for x in dependency.dependencies]
             lock_entries.append(
                 RootLockEntry(
                     categories=[],
@@ -110,16 +125,13 @@ def deptree_to_lock_entries(root: RootDependency) -> List[LockEntry]:
                 )
             )
         elif isinstance(dependency, ResolvedSourceDependency):
-            dependencies = [
-                cast(ResolvedDependency, x).name
-                for x in dependency.dependencies
-            ]
             lock_entries.append(
                 SourceLockEntry(
                     name=dependency.package.name,
                     version=dependency.package.version,
                     source=dependency.package.source.name,
                     categories=dependency.categories,
+                    r_constraint=str(dependency.r_constraint),
                     files=[
                         PackageFile(
                             name=dependency.package.filename,
@@ -128,25 +140,14 @@ def deptree_to_lock_entries(root: RootDependency) -> List[LockEntry]:
                     ],
                     dependencies=dependencies
                 ))
-        elif isinstance(dependency, ResolvedCoreDependency):
-            lock_entries.append(
-                CoreLockEntry(
-                    name=dependency.name,
-                    categories=dependency.categories,
-                    dependencies=[]
-                )
-            )
         elif isinstance(dependency, ResolvedVCSDependency):
-            dependencies = [
-                cast(ResolvedDependency, x).name
-                for x in dependency.dependencies
-            ]
             lock_entries.append(
                 VCSLockEntry(
                     name=dependency.name,
                     vcs_type=dependency.vcs_type,
                     url=dependency.url,
                     ref=dependency.ref,
+                    r_constraint=str(dependency.r_constraint),
                     dependencies=dependencies,
                     categories=dependency.categories
                 )

@@ -97,9 +97,14 @@ class SourceLockEntry(LockEntry):
     source: str
     # The files description
     files: List[PackageFile]
+    # The constraint on the R version
+    r_constraint: str
 
     @classmethod
     def fromdict(cls, d: Dict[str, Any]) -> SourceLockEntry:
+        if "r_constraint" not in d:
+            d["r_constraint"] = ""
+
         self = cls(**d)
         self.files = [PackageFile.fromdict(x) for x in d["files"]]
         return self
@@ -120,11 +125,15 @@ class VCSLockEntry(LockEntry):
     url: str
     # the reference to checkout.
     ref: Optional[str]
+    # The constraint on the R version
+    r_constraint: str
 
     @classmethod
     def fromdict(cls, d: Dict[str, Any]) -> VCSLockEntry:
         if "ref" not in d:
             d["ref"] = None
+        if "r_constraint" not in d:
+            d["r_constraint"] = ""
         return cls(**d)
 
     def asdict(self) -> Dict[str, Any]:
