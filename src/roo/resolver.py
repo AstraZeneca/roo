@@ -5,6 +5,7 @@ import logging
 from typing import List, cast, Optional, Union
 
 from roo.console import console
+from roo.sources.package_abc import PackageABC
 
 from .caches.vcs_store import VCSStore
 from .deptree.dependencies import (
@@ -28,6 +29,17 @@ class CannotResolveError(Exception):
 
 class Resolver:
     def __init__(self, source_group: SourceGroup):
+        """The resolver class is what powers the resolution of the tree
+        step by step. We feed in a root dependency with the unresolved
+        dependencies from the rproject file, and (hopefully) retrieve
+        all the tree of resolved dependencies.
+
+        Note that, however, at this stage we don't have any connection
+        to a given environment, so one dependency is left unresolved:
+        the R version. It will be checked instead at install time.
+        In the tree, it's handled as a special dependency, but in the
+        lock file it's going to be a special key."""
+
         self.source_group = source_group
         self.resolved_cache: OrderedDict[str, ResolvedDependency] = \
             OrderedDict()
@@ -43,11 +55,6 @@ class Resolver:
 
         with console().status("Resolving dependencies"):
             self._first_level_resolve(root)
-            # Now all these dependencies should be resolved, and we perform the
-            # resolution depth first. This way we guarantee that whatever is
-            # specified in the rproject file takes precedence because the
-            # packages have been looked up already. Temporary workaround
-            # before we get a better resolver.
 
             self._resolve_tree_depth_first(root)
 
@@ -163,20 +170,15 @@ class Resolver:
         package.ensure_local()
 
         # Check its dependencies and add them as unresolved.
-        subdep_list: List[StructuralDependency] = []
-        for subdep in package.dependencies:
-            logger.info(f" - {subdep.name}")
-            unresolved_subdep = UnresolvedConstrainedDependency(
-                name=subdep.name,
-                constraint=_adapt_constraint(subdep.constraint),
-                categories=unresolved.categories
-            )
-            subdep_list.append(unresolved_subdep)
+        subdep_list = _extract_subdeps(package)
+        for subdep in subdep_list:
+            subdep.categories = unresolved.categories
 
         resolved_dep = ResolvedSourceDependency(
             name=package.name,
             package=package,
             categories=unresolved.categories,
+            r_constraint=_constraint_list_to_object(package.r_constraint),
             dependencies=subdep_list
         )
 
@@ -199,17 +201,9 @@ class Resolver:
             raise CannotResolveError(f"VCS clone failed: {e}") from None
 
         package = DirPackage(vcs_store.clone_dir(unresolved.ref))
-
-        # Extract the dependencies of the found package
-        subdep_list: List[StructuralDependency] = []
-        for subdep in package.dependencies:
-            logger.info(f" - {subdep.name}")
-            unresolved_subdep = UnresolvedConstrainedDependency(
-                name=subdep.name,
-                constraint=_adapt_constraint(subdep.constraint),
-                categories=unresolved.categories
-            )
-            subdep_list.append(unresolved_subdep)
+        subdep_list = _extract_subdeps(package)
+        for subdep in subdep_list:
+            subdep.categories = unresolved.categories
 
         resolved_dep = ResolvedVCSDependency(
             name=unresolved.name,
@@ -260,8 +254,8 @@ class Resolver:
                            resolved: ResolvedDependency,
                            unresolved: UnresolvedDependency) -> bool:
         """
-        Checks if the resolved dependency satisfies the unresolved
-        dependency constraint.
+        Checks if the resolved dependency we have in the cache
+        satisfies the unresolved dependency constraint.
         """
 
         # The problem here is that this really depends on the type
@@ -344,7 +338,7 @@ class Resolver:
             )
 
 
-def _adapt_constraint(constraint_list: list) -> VersionConstraint:
+def _constraint_list_to_object(constraint_list: list) -> VersionConstraint:
     """Converts the list of constraint into a VersionConstraint object"""
 
     constraint_string = ",".join(constraint_list)
@@ -361,3 +355,18 @@ def is_core_dependency(dependency_name: str) -> bool:
         "methods", "tools", "parallel", "splines", "grid",
         "compiler", "datasets", "stats4", "tcltk", "translations"
     )
+
+
+def _extract_subdeps(package: PackageABC) -> List[StructuralDependency]:
+    # Extract the dependencies of the found package
+    subdep_list: List[StructuralDependency] = []
+    for subdep in package.dependencies:
+        logger.info(f" - {subdep.name}")
+        unresolved_subdep = UnresolvedConstrainedDependency(
+            name=subdep.name,
+            constraint=_constraint_list_to_object(subdep.constraint),
+            categories=[]
+        )
+        subdep_list.append(unresolved_subdep)
+
+    return subdep_list
