@@ -101,7 +101,9 @@ class Installer:
                         f"{dep.name} requires R {dep.r_constraint} but "
                         f"environment is for R {r_version}"
                     )
-                    raise InstallationError(f"R version violation for {dep}")
+                    raise InstallationError(
+                        f"R version violation for {dep.name}"
+                    )
 
         # Then do all the downloading required so that we get this over with
         # and we can install freely
