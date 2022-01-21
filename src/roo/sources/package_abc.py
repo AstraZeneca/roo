@@ -32,3 +32,8 @@ class PackageABC(abc.ABC):
         """Returns the list of dependencies the package has.
         If the file is not locally downloaded, this call will download
         the package."""
+
+    @property
+    @abc.abstractmethod
+    def r_constraint(self) -> List[str]:
+        """Returns the constraints on the R version"""

@@ -41,3 +41,7 @@ class DirPackage(PackageABC):
     def dependencies(self) -> List[Dependency]:
         """Returns the list of description dependencies the package has."""
         return self.description.dependencies
+
+    @property
+    def r_constraint(self) -> List[str]:
+        return self.description.r_constraint

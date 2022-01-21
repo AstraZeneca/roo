@@ -87,6 +87,11 @@ class SourcePackage(PackageABC):
         self.ensure_local()
         return cast(Description, self.description).dependencies
 
+    @property
+    def r_constraint(self) -> List[str]:
+        self.ensure_local()
+        return cast(Description, self.description).r_constraint
+
     def has_local_file(self) -> bool:
         """Returns true if the package has a local file"""
         return self.local_path is not None
