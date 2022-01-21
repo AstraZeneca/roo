@@ -21,7 +21,7 @@ def test_description_with_split_deps(fixture_file):
 def test_empty_import(fixture_file):
     description = Description.parse(
         fixture_file("DESCRIPTION_with_empty_imports"))
-    assert len(description.dependencies) == 1
+    assert len(description.dependencies) == 0
 
 
 def test_duplicated_entries(fixture_file):
