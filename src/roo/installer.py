@@ -1,6 +1,6 @@
 import logging
 import pathlib
-from typing import Union, List, cast, Generator
+from typing import List, cast, Generator
 
 from .caches.build_cache import BuildCache
 from .caches.vcs_store import VCSStore
@@ -14,7 +14,7 @@ from .parsers.rproject import RProject
 from .r_executor import ExecutorError
 from .sources.source_group import create_source_group_from_config_list
 from .sources.vcs import vcs_clone_shallow
-from .user_notifier import NullNotifier, NotifierABC
+from .console import console
 
 logger = logging.getLogger(__file__)
 
@@ -29,7 +29,6 @@ class Installer:
     """
 
     def __init__(self,
-                 notifier: Union[NotifierABC, None] = None,
                  verbose_build: bool = False,
                  serial: bool = False,
                  use_vanilla: bool = False):
@@ -37,17 +36,11 @@ class Installer:
         Initialise the installer.
 
         Args:
-            notifier: An instance of the notifier.
-                      If None, a NullNotifier will be used.
             verbose_build: Defines if the build should be verbose or not
             serial: Defines if the installation and build should be in serial,
                     or parallelised across multiple processes.
             use_vanilla: specify --use-vanilla for CMD INSTALL
         """
-        if notifier is None:
-            notifier = NullNotifier()
-
-        self._notifier = notifier
         self._verbose_build = verbose_build
         self._serial = serial
         self._use_vanilla = use_vanilla
@@ -75,9 +68,10 @@ class Installer:
         source_group = create_source_group_from_config_list(
             lockfile.sources)
 
-        self._notifier.message(
+        console().print(
             f"Installing {', '.join(install_dep_categories)} "
-            f"dependencies from lockfile in environment {environment.name}.")
+            f"dependencies from lockfile in environment "
+            f"[environment]{environment.name}[/environment].")
 
         deptree = lock_entries_to_deptree(source_group, lockfile.entries)
         # First do all the downloading required
@@ -109,7 +103,7 @@ class Installer:
         logger.info(f"Cloning {dep.name} from VCS {dep.url}")
 
         cache = VCSStore(dep.url)
-        self._notifier.message(
+        console().print(
             f"- Cloning [package]{dep.name}[/package] "
             f"from {dep.url}",
             indent=2
@@ -127,7 +121,7 @@ class Installer:
         if dep.package.has_local_file() and dep.package.hash_match():
             return
 
-        self._notifier.message(
+        console().print(
             f"- Downloading [package]{source_package.name}[/package] "
             f"([version]{source_package.version}[/version])",
             indent=2)
@@ -177,7 +171,7 @@ class Installer:
         op_str = ("Installing"
                   if installed_version is None else "Replacing")
 
-        self._notifier.message(
+        console().print(
             f"- {op_str} [package]{dep.name}[/package] ", indent=2)
 
         if installed_version is not None:
@@ -230,9 +224,9 @@ class Installer:
         if cache.has_build(package.name, package.version):
             cached_str = "(cached)"
 
-        msg = (f"- {op_str} [package]{package.name}[/package] "
+        msg = (" "*2 + f"- {op_str} [package]{package.name}[/package] "
                f"([version]{version_str}[/version]) {cached_str}")
-        self._notifier.message(msg, indent=2)
+        console().print(msg)
 
         if installed_version is not None:
             executor.remove(package.name)
