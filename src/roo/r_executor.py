@@ -123,6 +123,10 @@ class RExecutorBase:
         return {"version": version, "platform": platform}
 
     @property
+    def version(self) -> str:
+        return self.version_info["version"]
+
+    @property
     def r_executable_path(self) -> pathlib.Path:
         raise NotImplementedError()
 

@@ -49,6 +49,7 @@ def test_populated_lock_save(tmpdir):
             version="1.0.0",
             source="QS",
             categories=["main"],
+            r_constraint="*",
             files=[
                 PackageFile(name="mypackage-1.0.0.tar.gz", hash="sha:12345")
             ],
@@ -101,6 +102,7 @@ def test_lock_dependencies(tmpdir):
             version="1.0.0",
             source="QS",
             categories=["main"],
+            r_constraint="*",
             files=[
                     PackageFile(
                         name="base-1.0.0.tar.gz",
@@ -114,6 +116,7 @@ def test_lock_dependencies(tmpdir):
             version="1.0.0",
             source="QS",
             categories=["main"],
+            r_constraint="*",
             files=[
                 PackageFile(
                     name="derived-1.0.0.tar.gz",
@@ -127,6 +130,7 @@ def test_lock_dependencies(tmpdir):
             version="1.0.0",
             source="QS",
             categories=["main"],
+            r_constraint="*",
             files=[
                     PackageFile(
                         name="another-1.0.0.tar.gz",

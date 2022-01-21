@@ -5,10 +5,11 @@ def test_description_parsing(fixture_file):
     description = Description.parse(fixture_file("DESCRIPTION"))
 
     assert isinstance(description, Description)
-    assert len(description.dependencies) == 5
+    assert len(description.dependencies) == 4
     assert all([isinstance(x, Dependency) for x in description.dependencies])
     assert description.version == "2.0"
     assert description.package == "abc"
+    assert description.r_constraint == ['>= 2.10']
 
 
 def test_description_with_split_deps(fixture_file):
@@ -20,7 +21,7 @@ def test_description_with_split_deps(fixture_file):
 def test_empty_import(fixture_file):
     description = Description.parse(
         fixture_file("DESCRIPTION_with_empty_imports"))
-    assert len(description.dependencies) == 1
+    assert len(description.dependencies) == 0
 
 
 def test_duplicated_entries(fixture_file):

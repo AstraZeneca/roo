@@ -48,7 +48,11 @@ class ResolvedDependency:
 @dataclasses.dataclass
 class ResolvedSourceDependency(ResolvedDependency):
     """Represents a dependency that is resolved by a source such as CRAN"""
+    # The package that this dependency uses for resolution
     package: SourcePackage
+
+    # The constraint on the R version this dependency has
+    r_constraint: VersionConstraint
 
 
 @dataclasses.dataclass

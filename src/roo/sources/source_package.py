@@ -3,6 +3,8 @@ import os
 import pathlib
 from typing import List, Optional, TYPE_CHECKING, cast
 
+from roo.sources.package_abc import PackageABC
+
 from ..hashing import sha256path
 from ..parsers.description import Description
 
@@ -11,7 +13,7 @@ if TYPE_CHECKING:
     from ..parsers.description import Dependency
 
 
-class SourcePackage:
+class SourcePackage(PackageABC):
     """Represents a package on a source"""
 
     def __init__(self,
@@ -84,6 +86,11 @@ class SourcePackage:
         the package."""
         self.ensure_local()
         return cast(Description, self.description).dependencies
+
+    @property
+    def r_constraint(self) -> List[str]:
+        self.ensure_local()
+        return cast(Description, self.description).r_constraint
 
     def has_local_file(self) -> bool:
         """Returns true if the package has a local file"""
