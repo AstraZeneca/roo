@@ -3,6 +3,8 @@ import os
 import pathlib
 from typing import List, Optional, TYPE_CHECKING, cast
 
+from roo.sources.package_abc import PackageABC
+
 from ..hashing import sha256path
 from ..parsers.description import Description
 
@@ -11,7 +13,7 @@ if TYPE_CHECKING:
     from ..parsers.description import Dependency
 
 
-class SourcePackage:
+class SourcePackage(PackageABC):
     """Represents a package on a source"""
 
     def __init__(self,

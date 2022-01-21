@@ -1,10 +1,12 @@
 import pathlib
 from typing import List
 
+from roo.sources.package_abc import PackageABC
+
 from ..parsers.description import Description, Dependency
 
 
-class DirPackage:
+class DirPackage(PackageABC):
     """Represents a package in a local directory"""
 
     def __init__(self, dir_path: pathlib.Path):
