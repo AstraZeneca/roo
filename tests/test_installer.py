@@ -9,7 +9,6 @@ from roo.caches.build_cache import BuildCache
 from roo.environment import Environment
 from roo.installer import Installer, InstallationError
 from roo.sources.exceptions import PackageNotFoundError
-from roo.user_notifier import UserNotifier
 from roo.parsers.lock import Lock, SourceLockEntry
 from roo.locker import Locker
 from roo.parsers.rproject import RProject
@@ -62,7 +61,7 @@ def test_installation_fails_for_missing_package(tmpdir, fixture_file):
     entry.files[0].name = "rlang_0.0.0.tar.gz"
     entry.files[0].hash = "sha256:13845846f27085279bfbb13986d56ff505486a38fe8c59e5e428e6760f835088"  # noqa
 
-    installer = Installer(UserNotifier(True))
+    installer = Installer()
 
     with pytest.raises(PackageNotFoundError,
                        match="rlang 0.0.0"):
@@ -80,7 +79,7 @@ def test_installation_fails_for_missing_r(tmpdir, fixture_file):
     shutil.copy(fixture_file("simple", "roo.lock"), "roo.lock")
     lock_file = Lock.parse(pathlib.Path("roo.lock"))
 
-    installer = Installer(UserNotifier(True))
+    installer = Installer()
     with mock.patch("subprocess.check_call") as check_call_patched:
         check_call_patched.side_effect = FileNotFoundError()
         with pytest.raises(InstallationError,
@@ -101,7 +100,7 @@ def test_install_with_wrong_sha(tmpdir, fixture_file):
         lock_file = Lock.parse(pathlib.Path("roo.lock"))
         entry = cast(SourceLockEntry, lock_file.entries[1])
         entry.files[0].hash = "sha256:12345"
-        installer = Installer(UserNotifier(True))
+        installer = Installer()
         with pytest.raises(InstallationError,
                            match="Hash for package assertthat 0.2.1"):
             installer.install_lockfile(lock_file, env)

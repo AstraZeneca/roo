@@ -20,6 +20,7 @@ def console():
 def _create_theme():
     return Theme({
         "success": "green",
+        "message": "bold blue",
         "warning": "bold yellow",
         "error": "bold red",
         "package": "turquoise4",

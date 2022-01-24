@@ -129,9 +129,8 @@ class Installer:
 
         cache = VCSStore(dep.url)
         console().print(
-            f"- Cloning [package]{dep.name}[/package] "
-            f"from {dep.url}",
-            indent=2
+            f"  - Cloning [package]{dep.name}[/package] "
+            f"from {dep.url}"
         )
 
         cache.clear_clone(dep.ref)
@@ -146,15 +145,22 @@ class Installer:
         if dep.package.has_local_file() and dep.package.hash_match():
             return
 
-        console().print(
-            f"- Downloading [package]{source_package.name}[/package] "
-            f"([version]{source_package.version}[/version])",
-            indent=2)
+        with console().status(
+                f"[message]Downloading "
+                f"[package]{source_package.name}[/package] "
+                f"([version]{source_package.version}[/version]) "
+                f"from {source_package.source.name}[/message]"):
+            # Either we don't have the package or the file is there but it
+            # was cut short during download so it's broken. Act as if it's
+            # not there.
+            source_package.download()
 
-        # Either we don't have the package or the file is there but it
-        # was cut short during download so it's broken. Act as if it's
-        # not there.
-        source_package.download()
+        console().print(
+            f":white_check_mark: [success]Downloaded "
+            f"[package]{source_package.name}[/package] "
+            f"([version]{source_package.version}[/version]) "
+            f"from {source_package.source.name}[/success]"
+        )
 
         if not source_package.hash_match():
             raise InstallationError(
@@ -186,26 +192,36 @@ class Installer:
         vcs_store = VCSStore(dep.url)
         logger.info(f"Using vcs store at {vcs_store.base_dir}")
 
-        try:
-            vcs_clone_shallow(
-                dep.vcs_type, dep.url, dep.ref, vcs_store.clone_dir(dep.ref)
-            )
-        except ValueError as e:
-            raise InstallationError(f"VCS clone failed: {e}") from None
+        with console().status(
+                f"[message]Cloning from VCS {dep.url}[/message]") as status:
+            try:
+                vcs_clone_shallow(
+                    dep.vcs_type, dep.url, dep.ref, vcs_store.clone_dir(
+                        dep.ref)
+                )
+            except ValueError as e:
+                console().print("[error]VCS clone failed: {e}[/error]")
+                raise InstallationError(f"VCS clone failed: {e}") from None
 
-        op_str = ("Installing"
-                  if installed_version is None else "Replacing")
+            if installed_version is not None:
+                status.update(
+                    status=f"[message]"
+                           f"Removing currently installed [package]{dep.name}"
+                           f"[/package][/message]"
+                )
+                executor.remove(dep.name)
 
-        console().print(
-            f"- {op_str} [package]{dep.name}[/package] ", indent=2)
+            status.update(
+                status=f"[message]Installing [package]{dep.name}"
+                       f"[/package][/message]")
+            try:
+                executor.install(vcs_store.clone_dir(dep.ref))
+            except ExecutorError as e:
+                raise InstallationError(f"Unable to install {dep.name}: {e}")
 
-        if installed_version is not None:
-            executor.remove(dep.name)
-
-        try:
-            executor.install(vcs_store.clone_dir(dep.ref))
-        except ExecutorError as e:
-            raise InstallationError(f"Unable to install {dep.name}: {e}")
+            console().print(
+                f":white_check_mark: [success]Installed [package]{dep.name}"
+                f"[/package][/success]")
 
         # Delete the cache only in case of success, so it's easier to check
         # what went wrong in case of error.
@@ -247,33 +263,52 @@ class Installer:
             op_str = "Replacing"
             version_str = f"{installed_version} -> {package.version}"
         if cache.has_build(package.name, package.version):
-            cached_str = "(cached)"
+            cached_str = "(from cache)"
 
-        msg = (" "*2 + f"- {op_str} [package]{package.name}[/package] "
-               f"([version]{version_str}[/version]) {cached_str}")
-        console().print(msg)
+        with console().status(
+                f"[message]{op_str} [package]{package.name}[/package] "
+                f"([version]{version_str}[/version]) {cached_str}[/message]"
+        ) as status:
 
-        if installed_version is not None:
-            executor.remove(package.name)
+            if installed_version is not None:
+                status.update(
+                    f"[message]Removing previous version "
+                    f"[package]{package.name}[/package] "
+                    f"([version]{installed_version}[/version])[/message]")
+                executor.remove(package.name)
 
-        if cache.has_build(package.name, package.version):
-            cache.restore_build(
-                package.name,
-                package.version,
-                environment.lib_dir / dep.name)
-        else:
-            try:
-                executor.install(cast(pathlib.Path, package.local_path))
-            except ExecutorError as e:
-                raise InstallationError(f"Unable to install {dep.name}: {e}")
-            cache.add_build(
-                package.name, package.version,
-                environment.lib_dir / dep.name
-            )
-
+            if cache.has_build(package.name, package.version):
+                status.update(
+                    f"[message]Reinstalling "
+                    f"[version]{package.name}[/version] "
+                    f"([version]{package.version}[/version]) "
+                    f"from cache[/message]")
+                cache.restore_build(
+                    package.name,
+                    package.version,
+                    environment.lib_dir / dep.name)
+            else:
+                status.update(
+                    f"[message]Building "
+                    f"[version]{package.name}[/version] "
+                    f"([version]{package.version}[/version])[/message]")
+                try:
+                    executor.install(cast(pathlib.Path, package.local_path))
+                except ExecutorError as e:
+                    raise InstallationError(
+                        f"Unable to install {dep.name}: {e}")
+                cache.add_build(
+                    package.name, package.version,
+                    environment.lib_dir / dep.name
+                )
         logger.info(
             f"Package {dep.name} successfully "
             f"installed in environment {environment.name}"
+        )
+        console().print(
+            f":white_check_mark: [success]Installed "
+            f"[package]{package.name}[/package] "
+            f"([version]{package.version}[/version]) {cached_str}[/success]"
         )
 
 
