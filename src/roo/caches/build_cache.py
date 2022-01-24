@@ -73,10 +73,15 @@ class BuildCache:
         logger.info(f"Adding {path} to {package_name} {package_version}")
         pkg_path = self._package_filename(package_name, package_version)
 
-        with atomicwrites.atomic_write(
-                pkg_path, mode="wb", overwrite=True) as f:
-            with tarfile.open(fileobj=f, mode="w:gz") as targz:
-                targz.add(str(path), arcname=".")
+        try:
+            with atomicwrites.atomic_write(
+                    pkg_path, mode="wb", overwrite=True) as f:
+                with tarfile.open(fileobj=f, mode="w:gz") as targz:
+                    targz.add(str(path), arcname=".")
+        except FileExistsError:
+            # A concurrent process has built the same thing and got there
+            # first.
+            pass
 
         return pkg_path
 

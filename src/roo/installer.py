@@ -2,10 +2,10 @@ import logging
 import pathlib
 from typing import List, cast, Generator
 
+from roo.caches.vcs_store import VCSStore
 from roo.semver import Version
 
 from .caches.build_cache import BuildCache
-from .caches.vcs_store import VCSStore
 from .deptree.dependencies import ResolvedDependency, RootDependency, \
     ResolvedSourceDependency, ResolvedVCSDependency, ResolvedCoreDependency
 from .deptree.transforms import lock_entries_to_deptree
@@ -47,6 +47,12 @@ class Installer:
         self._serial = serial
         self._use_vanilla = use_vanilla
 
+        # This is a temp dir where we put all our clones from VCS.
+        # It is guaranteed that the store is different for each invocation,
+        # so we never risk an issue of one process stomping on another
+        # process cloning.
+        self._vcs_store = VCSStore()
+
     def install_lockfile(self,
                          lockfile: Lock,
                          environment: Environment,
@@ -69,6 +75,13 @@ class Installer:
 
         source_group = create_source_group_from_config_list(
             lockfile.sources)
+
+        # Make sure we start from a clear cache for VCS.
+        # This may happen if we perform an install lockfile twice and the
+        # first one fails, leaving stuff in the cache.
+
+        logger.info("Clearing cache for VCS")
+        self._vcs_store.clear()
 
         console().print(
             f"Installing {', '.join(install_dep_categories)} "
@@ -116,7 +129,7 @@ class Installer:
         plan = plan_generator(deptree, install_dep_categories)
         for dep in plan:
             if isinstance(dep, ResolvedVCSDependency):
-                self._install_package_from_vcs(dep, environment)
+                self._install_package_from_vcs_store(dep, environment)
             elif isinstance(dep, ResolvedSourceDependency):
                 self._install_package_from_source(dep, environment)
             elif isinstance(dep, (RootDependency, ResolvedCoreDependency)):
@@ -124,16 +137,20 @@ class Installer:
             else:
                 raise InstallationError(f"Unknown dependency {dep}")
 
-    def _checkout_from_vcs(self, dep: ResolvedVCSDependency):
-        logger.info(f"Cloning {dep.name} from VCS {dep.url}")
+        # it's all gone well, so let's delete the cache
+        logger.info("Clearing cache for VCS")
+        self._vcs_store.clear()
 
-        cache = VCSStore(dep.url)
+    def _checkout_from_vcs(self, dep: ResolvedVCSDependency):
+        logger.info(f"Cloning {dep.name} from VCS {dep.url}@{dep.ref}")
+
+        vcs_store = self._vcs_store
         with console().status(
                 f"Cloning [package]{dep.name}[/package] "
-                f"from {dep.url}"):
-            cache.clear_clone(dep.ref)
+                f"from {dep.url}@{dep.ref}"):
+            vcs_store.clear_clone(dep.url, dep.ref)
             vcs_clone_shallow(dep.vcs_type, dep.url, dep.ref,
-                              cache.clone_dir(dep.ref))
+                              vcs_store.clone_dir(dep.url, dep.ref))
 
     def _ensure_local_source_package(self, dep: ResolvedSourceDependency):
         """Ensures that the packages have been downloaded
@@ -167,14 +184,13 @@ class Installer:
                 f"file {source_package.filename} is different from the "
                 f"expected.")
 
-    def _install_package_from_vcs(self,
-                                  dep: ResolvedVCSDependency,
-                                  environment: Environment):
+    def _install_package_from_vcs_store(self,
+                                        dep: ResolvedVCSDependency,
+                                        environment: Environment):
         """Install a VCS package"""
-        # VCS packages must be checked out to a temp directory
-        # every time, otherwise we'll get conflicts between parallel
-        # executions that may be cloning and switching at the same
-        # time.
+        # At this stage, we assume that the package has been checked
+        # out in the temporary directory, and we don't have to perform
+        # the cloning again.
 
         installed_version = environment.package_version(dep.name)
         executor = environment.executor(
@@ -187,32 +203,28 @@ class Installer:
             f"in environment {environment.name}"
         )
 
-        vcs_store = VCSStore(dep.url)
-        logger.info(f"Using vcs store at {vcs_store.base_dir}")
+        vcs_store = self._vcs_store
+        logger.info(f"Using vcs store at {vcs_store.root_dir}")
 
         with console().status(
-                f"[message]Cloning from VCS {dep.url}@{dep.ref}[/message]"
+                f"[message]Building[/message] "
+                f"[package]{dep.name}[/package] "
+                f"from VCS {dep.url}@{dep.ref}"
         ) as status:
-            try:
-                vcs_clone_shallow(
-                    dep.vcs_type, dep.url, dep.ref, vcs_store.clone_dir(
-                        dep.ref)
-                )
-            except ValueError as e:
-                raise InstallationError(f"VCS clone failed: {e}") from None
-
             if installed_version is not None:
                 status.update(
                     status=f"[message]Removing currently installed[/message] "
-                           f"[package]{dep.name}[/package]"
+                           f"[package]{dep.name}[/package] "
+                           f"[version]{installed_version}[/version]"
                 )
                 executor.remove(dep.name)
 
             status.update(
-                status=f"[message]Installing [package]{dep.name}"
-                       f"[/package][/message]")
+                status=f"[message]Building[/message] "
+                       f"[package]{dep.name}[/package] "
+                       f"from VCS {dep.url}@{dep.ref}")
             try:
-                executor.install(vcs_store.clone_dir(dep.ref))
+                executor.install(vcs_store.clone_dir(dep.url, dep.ref))
             except ExecutorError as e:
                 raise InstallationError(f"Unable to install {dep.name}: {e}")
 
@@ -227,7 +239,7 @@ class Installer:
 
         # Delete the cache only in case of success, so it's easier to check
         # what went wrong in case of error.
-        vcs_store.clear_clone(dep.ref)
+        vcs_store.clear_clone(dep.url, dep.ref)
 
     def _install_package_from_source(self,
                                      dep: ResolvedSourceDependency,
