@@ -1,3 +1,5 @@
+import string
+import random
 import tarfile
 import hashlib
 import shutil
@@ -121,9 +123,15 @@ class SourceCache:
                 if description is None:
                     raise ValueError("Unable to unpack DESCRIPTION file")
 
-                with atomicwrites.atomic_write(
-                        description_path, mode="wb") as f:
-                    f.write(description.read())
+                try:
+                    with atomicwrites.atomic_write(
+                            description_path, mode="wb") as f:
+                        f.write(description.read())
+                except FileExistsError:
+                    # If the file already exists at this point, it's
+                    # likely that a concurrent process created it as well,
+                    # so we just keep going.
+                    pass
         except FileNotFoundError:
             return None
 
@@ -156,17 +164,28 @@ class SourceCache:
             f"{package_name}_{package_version}.tar.gz"
         )
 
-        meta_dir = self.package_meta_dir(package_name, package_version)
-        description_path = meta_dir / "DESCRIPTION"
-        if pkg_path.exists() and description_path.exists():
+        if pkg_path.exists():
             return pkg_path
+
+        letters = string.ascii_lowercase
+        append = ''.join(random.choice(letters) for i in range(10))
 
         partial_pkg_path = (
             self.package_dir(package_name) /
-            f"{package_name}_{package_version}.part"
+            (f"{package_name}_{package_version}." + append)
         )
 
+        # first copy it locally so that we guarantee that atomic operations.
+        # are not compromised by different filesystems.
+        # If both processes do the copy it's not a problem because they
+        # have different append strings.
         shutil.copy(path, partial_pkg_path)
-        atomicwrites.move_atomic(str(partial_pkg_path), str(pkg_path))
+
+        # Then perform the atomic move. Only one will succeed, the other
+        # will get a FileExistError and we'll keep going.
+        try:
+            atomicwrites.move_atomic(str(partial_pkg_path), str(pkg_path))
+        except FileExistsError:
+            pass
 
         return pkg_path
