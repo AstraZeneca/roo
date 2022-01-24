@@ -3,7 +3,6 @@ from roo.cli.lock import _ensure_lock
 from roo.exporters.lock.base_exporter import BaseExporter
 from roo.exporters.lock.lock_csv_exporter import LockCSVExporter
 from roo.exporters.lock.lock_packrat_exporter import LockPackratExporter
-from roo.user_notifier import UserNotifier
 
 
 @click.group(help="Commands to export data and information to different tools")
@@ -15,8 +14,7 @@ def export():
 @click.argument("format", type=click.Choice(["csv", "packrat"]))
 @click.argument("output", type=click.Path(writable=True))
 def export_lock(format, output):
-    notifier = UserNotifier()
-    lock_file = _ensure_lock(False, notifier, False)
+    lock_file = _ensure_lock(False, False)
 
     exporter: BaseExporter
     if format == "csv":

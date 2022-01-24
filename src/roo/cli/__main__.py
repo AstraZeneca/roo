@@ -10,16 +10,19 @@ from roo.cli.init import init
 from roo.cli.install import install
 from roo.cli.lock import lock
 from roo.cli.package import package
+from roo.console import init_console
 
 logger = logging.getLogger(__file__)
 
 
 @click.group()
+@click.option("-q", "--quiet", is_flag=True, help="Suppress any output")
 @click.option("-d", "--debug", is_flag=True, help="Show debug information")
 @click.version_option()
-def main(debug):
+def main(quiet, debug):
     level = logging.INFO if debug else logging.CRITICAL
     logging.basicConfig(level=level)
+    init_console(quiet)
 
 
 main.add_command(init)

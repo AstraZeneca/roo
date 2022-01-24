@@ -4,6 +4,7 @@ from collections import OrderedDict
 import logging
 from typing import List, cast, Optional, Union
 
+from roo.console import console
 from roo.sources.package_abc import PackageABC
 
 from .caches.vcs_store import VCSStore
@@ -27,20 +28,19 @@ class CannotResolveError(Exception):
 
 
 class Resolver:
-    """The resolver class is what powers the resolution of the tree
-    step by step. We feed in a root dependency with the unresolved
-    dependencies from the rproject file, and (hopefully) retrieve
-    all the tree of resolved dependencies.
+    def __init__(self, source_group: SourceGroup):
+        """The resolver class is what powers the resolution of the tree
+        step by step. We feed in a root dependency with the unresolved
+        dependencies from the rproject file, and (hopefully) retrieve
+        all the tree of resolved dependencies.
 
-    Note that, however, at this stage we don't have any connection
-    to a given environment, so one dependency is left unresolved:
-    the R version. It will be checked instead at install time.
-    In the tree, it's handled as a special dependency, but in the
-    lock file it's going to be a special key."""
+        Note that, however, at this stage we don't have any connection
+        to a given environment, so one dependency is left unresolved:
+        the R version. It will be checked instead at install time.
+        In the tree, it's handled as a special dependency, but in the
+        lock file it's going to be a special key."""
 
-    def __init__(self, source_group: SourceGroup, notifier):
         self.source_group = source_group
-        self.notifier = notifier
         self.resolved_cache: OrderedDict[str, ResolvedDependency] = \
             OrderedDict()
 
@@ -53,16 +53,10 @@ class Resolver:
         if old_tree is not None:
             self._pre_populate_cache(root, old_tree)
 
-        self.notifier.message("Resolving dependencies:")
+        with console().status("Resolving dependencies"):
+            self._first_level_resolve(root)
 
-        self._first_level_resolve(root)
-        # Now all these dependencies should be resolved (apart from the R),
-        # and we perform the resolution depth first. This way we guarantee
-        # that whatever is specified in the rproject file takes precedence
-        # because the packages have been looked up already. Temporary
-        # workaround before we get a better resolver.
-
-        self._resolve_tree_depth_first(root)
+            self._resolve_tree_depth_first(root)
 
     def _pre_populate_cache(self,
                             root: RootDependency,
@@ -275,7 +269,7 @@ class Resolver:
                 if not unresolved.constraint.allows(
                         Version.parse(resolved.package.version)):
                     msg = (
-                        f"Unable to satisfy subdependency constraint: "
+                        f"[error]Unable to satisfy subdependency constraint: "
                         f"Already found dependency "
                         f"{resolved.package.name} "
                         f"{resolved.package.version} cannot "
@@ -283,20 +277,22 @@ class Resolver:
                         f"{unresolved.constraint}")
                     if not isinstance(parent, RootDependency):
                         msg += f" for dependency {parent.name}"
-                    self.notifier.error(msg)
+                    msg += "[/error]"
+                    console().print(msg)
                     return False
                 return True
             elif isinstance(resolved, ResolvedVCSDependency):
-                msg = f"Constrained unresolved dependency {unresolved.name} "
+                msg = f"[warning]Constrained unresolved dependency " \
+                      f"{unresolved.name} "
                 if not isinstance(parent, RootDependency):
                     msg += f"for package {parent.name} "
                 msg += (
                     f"is resolved with VCS dependency {resolved.url}. "
                     f"At this stage, no assumptions can be made on the "
                     f"actual version that will be downloaded at installation "
-                    f"time. "
+                    f"time. [/warning]"
                 )
-                self.notifier.warning(msg)
+                console().print(msg)
                 return True
             elif isinstance(resolved, ResolvedCoreDependency):
                 return True
@@ -305,10 +301,10 @@ class Resolver:
                                 f"type {resolved}")
         elif isinstance(unresolved, UnresolvedVCSDependency):
             if not isinstance(resolved, ResolvedVCSDependency):
-                self.notifier.warning(
-                    f"VCS dependency {unresolved.name} has been "
+                console().print(
+                    f"[warning]VCS dependency {unresolved.name} has been "
                     f"resolved by previously found non-VCS dependency. "
-                    f"The resolution will continue regardless."
+                    f"The resolution will continue regardless.[/warning]"
                 )
             return True
 
@@ -325,19 +321,21 @@ class Resolver:
                 resolved_dep.package.version
                 if not already_found else "..."
             )
-            self.notifier.message(
-                f"- [package]{resolved_dep.package.name}[/package] "
-                f"([version]{version}[/version])",
-                indent=2 + 2 * level)
+            console().print(
+                " "*(2 + 2*level)
+                + f"- [package]{resolved_dep.package.name}[/package] "
+                + f"([version]{version}[/version])"
+            )
         elif isinstance(resolved_dep, ResolvedVCSDependency):
             ref = resolved_dep.ref
             if ref is None:
                 ref = "HEAD"
 
-            self.notifier.message(
-                f"- [package]{resolved_dep.name}[/package] "
-                f"([version]{resolved_dep.vcs_type}@{ref}[/version])",
-                indent=2 + 2 * level)
+            console().print(
+                " "*(2 + 2*level)
+                + f"- [package]{resolved_dep.name}[/package] "
+                + f"([version]{resolved_dep.vcs_type}@{ref}[/version])"
+            )
 
 
 def _constraint_list_to_object(constraint_list: list) -> VersionConstraint:

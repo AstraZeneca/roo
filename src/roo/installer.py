@@ -1,6 +1,6 @@
 import logging
 import pathlib
-from typing import Union, List, cast, Generator
+from typing import List, cast, Generator
 
 from roo.semver import Version
 
@@ -16,7 +16,7 @@ from .parsers.rproject import RProject
 from .r_executor import ExecutorError
 from .sources.source_group import create_source_group_from_config_list
 from .sources.vcs import vcs_clone_shallow
-from .user_notifier import NullNotifier, NotifierABC
+from .console import console
 
 logger = logging.getLogger(__file__)
 
@@ -31,7 +31,6 @@ class Installer:
     """
 
     def __init__(self,
-                 notifier: Union[NotifierABC, None] = None,
                  verbose_build: bool = False,
                  serial: bool = False,
                  use_vanilla: bool = False):
@@ -39,17 +38,11 @@ class Installer:
         Initialise the installer.
 
         Args:
-            notifier: An instance of the notifier.
-                      If None, a NullNotifier will be used.
             verbose_build: Defines if the build should be verbose or not
             serial: Defines if the installation and build should be in serial,
                     or parallelised across multiple processes.
             use_vanilla: specify --use-vanilla for CMD INSTALL
         """
-        if notifier is None:
-            notifier = NullNotifier()
-
-        self._notifier = notifier
         self._verbose_build = verbose_build
         self._serial = serial
         self._use_vanilla = use_vanilla
@@ -77,9 +70,10 @@ class Installer:
         source_group = create_source_group_from_config_list(
             lockfile.sources)
 
-        self._notifier.message(
+        console().print(
             f"Installing {', '.join(install_dep_categories)} "
-            f"dependencies from lockfile in environment {environment.name}.")
+            f"dependencies from lockfile in environment "
+            f"[environment]{environment.name}[/environment].")
 
         deptree = lock_entries_to_deptree(source_group, lockfile.entries)
         # I am forced to go through the plan three times.
@@ -95,11 +89,11 @@ class Installer:
         for dep in plan:
             if isinstance(dep, ResolvedSourceDependency):
                 if not (dep.r_constraint.allows(Version.parse(r_version))):
-                    self._notifier.error(
-                        f"Cannot install {dep.name} in environment "
+                    console().print(
+                        f"[error]Cannot install {dep.name} in environment "
                         f"{environment.name}. "
                         f"{dep.name} requires R {dep.r_constraint} but "
-                        f"environment is for R {r_version}"
+                        f"environment is for R {r_version}[/error]"
                     )
                     raise InstallationError(
                         f"R version violation for {dep.name}"
@@ -134,15 +128,12 @@ class Installer:
         logger.info(f"Cloning {dep.name} from VCS {dep.url}")
 
         cache = VCSStore(dep.url)
-        self._notifier.message(
-            f"- Cloning [package]{dep.name}[/package] "
-            f"from {dep.url}",
-            indent=2
-        )
-
-        cache.clear_clone(dep.ref)
-        vcs_clone_shallow(dep.vcs_type, dep.url, dep.ref,
-                          cache.clone_dir(dep.ref))
+        with console().status(
+                f"Cloning [package]{dep.name}[/package] "
+                f"from {dep.url}"):
+            cache.clear_clone(dep.ref)
+            vcs_clone_shallow(dep.vcs_type, dep.url, dep.ref,
+                              cache.clone_dir(dep.ref))
 
     def _ensure_local_source_package(self, dep: ResolvedSourceDependency):
         """Ensures that the packages have been downloaded
@@ -152,15 +143,22 @@ class Installer:
         if dep.package.has_local_file() and dep.package.hash_match():
             return
 
-        self._notifier.message(
-            f"- Downloading [package]{source_package.name}[/package] "
-            f"([version]{source_package.version}[/version])",
-            indent=2)
+        with console().status(
+                f"[message]Downloading[/message] "
+                f"[package]{source_package.name}[/package] "
+                f"([version]{source_package.version}[/version]) "
+                f"from {source_package.source.name}"):
+            # Either we don't have the package or the file is there but it
+            # was cut short during download so it's broken. Act as if it's
+            # not there.
+            source_package.download()
 
-        # Either we don't have the package or the file is there but it
-        # was cut short during download so it's broken. Act as if it's
-        # not there.
-        source_package.download()
+        console().print(
+            f":white_check_mark: [success]Downloaded[/success] "
+            f"[package]{source_package.name}[/package] "
+            f"([version]{source_package.version}[/version]) "
+            f"from {source_package.source.name}"
+        )
 
         if not source_package.hash_match():
             raise InstallationError(
@@ -192,35 +190,44 @@ class Installer:
         vcs_store = VCSStore(dep.url)
         logger.info(f"Using vcs store at {vcs_store.base_dir}")
 
-        try:
-            vcs_clone_shallow(
-                dep.vcs_type, dep.url, dep.ref, vcs_store.clone_dir(dep.ref)
-            )
-        except ValueError as e:
-            raise InstallationError(f"VCS clone failed: {e}") from None
+        with console().status(
+                f"[message]Cloning from VCS {dep.url}@{dep.ref}[/message]"
+        ) as status:
+            try:
+                vcs_clone_shallow(
+                    dep.vcs_type, dep.url, dep.ref, vcs_store.clone_dir(
+                        dep.ref)
+                )
+            except ValueError as e:
+                raise InstallationError(f"VCS clone failed: {e}") from None
 
-        op_str = ("Installing"
-                  if installed_version is None else "Replacing")
+            if installed_version is not None:
+                status.update(
+                    status=f"[message]Removing currently installed[/message] "
+                           f"[package]{dep.name}[/package]"
+                )
+                executor.remove(dep.name)
 
-        self._notifier.message(
-            f"- {op_str} [package]{dep.name}[/package] ", indent=2)
-
-        if installed_version is not None:
-            executor.remove(dep.name)
-
-        try:
-            executor.install(vcs_store.clone_dir(dep.ref))
-        except ExecutorError as e:
-            raise InstallationError(f"Unable to install {dep.name}: {e}")
-
-        # Delete the cache only in case of success, so it's easier to check
-        # what went wrong in case of error.
-        vcs_store.clear_clone(dep.ref)
+            status.update(
+                status=f"[message]Installing [package]{dep.name}"
+                       f"[/package][/message]")
+            try:
+                executor.install(vcs_store.clone_dir(dep.ref))
+            except ExecutorError as e:
+                raise InstallationError(f"Unable to install {dep.name}: {e}")
 
         logger.info(
             f"Package {dep.name} successfully "
             f"installed in environment {environment.name}"
         )
+
+        console().print(
+            f":white_check_mark: [success]Installed[/success] "
+            f"[package]{dep.name}[/package] from VCS {dep.url}@{dep.ref}")
+
+        # Delete the cache only in case of success, so it's easier to check
+        # what went wrong in case of error.
+        vcs_store.clear_clone(dep.ref)
 
     def _install_package_from_source(self,
                                      dep: ResolvedSourceDependency,
@@ -247,39 +254,62 @@ class Installer:
         )
 
         op_str = "Installing"
-        version_str = package.version
+        version_str = f"[version]{package.version}[/version]"
         cached_str = ""
         if installed_version is not None:
             op_str = "Replacing"
-            version_str = f"{installed_version} -> {package.version}"
-        if cache.has_build(package.name, package.version):
-            cached_str = "(cached)"
-
-        msg = (f"- {op_str} [package]{package.name}[/package] "
-               f"([version]{version_str}[/version]) {cached_str}")
-        self._notifier.message(msg, indent=2)
-
-        if installed_version is not None:
-            executor.remove(package.name)
-
-        if cache.has_build(package.name, package.version):
-            cache.restore_build(
-                package.name,
-                package.version,
-                environment.lib_dir / dep.name)
-        else:
-            try:
-                executor.install(cast(pathlib.Path, package.local_path))
-            except ExecutorError as e:
-                raise InstallationError(f"Unable to install {dep.name}: {e}")
-            cache.add_build(
-                package.name, package.version,
-                environment.lib_dir / dep.name
+            version_str = (
+                f"[version]{installed_version}[/version] -> "
+                f"[version]{package.version}[/version]"
             )
+        if cache.has_build(package.name, package.version):
+            cached_str = "(from cache)"
 
+        with console().status(
+                f"[message]{op_str}[/message] "
+                f"[package]{package.name}[/package] "
+                f"([version]{version_str}[/version]) {cached_str}"
+        ) as status:
+
+            if installed_version is not None:
+                status.update(
+                    f"[message]Removing previous version[/message]"
+                    f"[package]{package.name}[/package] "
+                    f"([version]{installed_version}[/version])")
+                executor.remove(package.name)
+
+            if cache.has_build(package.name, package.version):
+                status.update(
+                    f"[message]Reinstalling[/message] "
+                    f"[version]{package.name}[/version] "
+                    f"([version]{package.version}[/version]) "
+                    f"(from cache)")
+                cache.restore_build(
+                    package.name,
+                    package.version,
+                    environment.lib_dir / dep.name)
+            else:
+                status.update(
+                    f"[message]Building[/message] "
+                    f"[version]{package.name}[/version] "
+                    f"([version]{package.version}[/version])")
+                try:
+                    executor.install(cast(pathlib.Path, package.local_path))
+                except ExecutorError as e:
+                    raise InstallationError(
+                        f"Unable to install {dep.name}: {e}")
+                cache.add_build(
+                    package.name, package.version,
+                    environment.lib_dir / dep.name
+                )
         logger.info(
             f"Package {dep.name} successfully "
             f"installed in environment {environment.name}"
+        )
+        console().print(
+            f":white_check_mark: [success]Installed[/success] "
+            f"[package]{package.name}[/package] "
+            f"({version_str}) {cached_str}"
         )
 
 

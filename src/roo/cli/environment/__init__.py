@@ -1,8 +1,8 @@
 import pathlib
 import logging
 import click
+from roo.console import console
 from roo.r_executor import ExecutorError
-from roo.user_notifier import UserNotifier
 
 from roo.environment import Environment, available_environments, \
     UnexistentEnvironment, enabled_environment
@@ -34,7 +34,6 @@ def environment():
 @click.argument("name", type=click.STRING, default="default")
 def environment_init(base_dir, overwrite, r_executable_path, name):
     base_dir = pathlib.Path(base_dir)
-    notifier = UserNotifier()
 
     try:
         env = Environment(base_dir=base_dir, name=name)
@@ -43,7 +42,8 @@ def environment_init(base_dir, overwrite, r_executable_path, name):
         logger.exception("Unable to initialise environment")
         raise click.ClickException(f"Unable to initialise environment: {e}")
 
-    notifier.message(f"Initialised and enabled environment {name}")
+    console().print(f"Initialised and enabled environment "
+                    f"[environment]{name}[/environment]")
 
 
 @environment.command(
@@ -57,7 +57,6 @@ def environment_init(base_dir, overwrite, r_executable_path, name):
 def environment_list(base_dir):
     base_dir = pathlib.Path(base_dir)
     envs = available_environments(base_dir)
-    notifier = UserNotifier()
 
     for env in envs:
         try:
@@ -66,13 +65,13 @@ def environment_list(base_dir):
             r_version = "[error]broken R[/error]"
 
         if env.is_enabled():
-            notifier.message(
+            console().print(
                 f"* [environment]{env.name}[/environment] "
                 f"([version]{r_version}[/version])"
             )
         else:
-            notifier.message(f"{env.name} ([version]{r_version}[/version])",
-                             indent=2)
+            console().print(f"{env.name} ([version]{r_version}[/version])",
+                            indent=2)
 
 
 @environment.command(
@@ -86,7 +85,6 @@ def environment_list(base_dir):
 @click.argument("name", type=click.STRING)
 def environment_enable(base_dir, name):
     base_dir = pathlib.Path(base_dir)
-    notifier = UserNotifier()
 
     env = Environment(base_dir=base_dir, name=name)
     try:
@@ -94,7 +92,7 @@ def environment_enable(base_dir, name):
     except UnexistentEnvironment:
         raise click.ClickException("Error: environment does not exist.")
 
-    notifier.message(
+    console().print(
         f"Environment [environment]{env.name}[/environment] enabled")
 
 
@@ -108,7 +106,6 @@ def environment_enable(base_dir, name):
               type=click.Path(), default=".")
 def environment_disable(base_dir):
     base_dir = pathlib.Path(base_dir)
-    notifier = UserNotifier()
 
     env = enabled_environment(base_dir)
     if env is None:
@@ -119,7 +116,7 @@ def environment_disable(base_dir):
     except UnexistentEnvironment:
         raise click.ClickException("Error: environment does not exist.")
 
-    notifier.message(
+    console().print(
         f"Environment [environment]{env.name}[/environment] disabled")
 
 

@@ -1,5 +1,7 @@
 import logging
 
+from roo.console import console
+
 from .parsers.lock import Lock, Source
 
 from .sources.source_group import create_source_group_from_config_list
@@ -8,8 +10,6 @@ from .resolver import Resolver
 from .parsers.rproject import RProject
 from .deptree.transforms import lock_entries_to_deptree, \
     deptree_to_lock_entries, rproject_to_deptree
-
-from .user_notifier import NotifierABC, NullNotifier
 
 logger = logging.getLogger(__file__)
 
@@ -20,9 +20,6 @@ class LockerError(Exception):
 
 class Locker:
     """Class that fills a lock file from the contents of the RProject file"""
-
-    def __init__(self, notifier: NotifierABC = NullNotifier()):
-        self._notifier = notifier
 
     def is_lock_file_sync(self,
                           rproject: RProject,
@@ -57,12 +54,12 @@ class Locker:
         logger.info("Syncing lock file")
 
         if self.is_lock_file_sync(rproject, old_lock, conservative):
-            self._notifier.message(
+            console().print(
                 "rproject and lock file are already synchronized.")
             return old_lock
 
         source_group = create_source_group_from_config_list(rproject.sources)
-        resolver = Resolver(source_group, self._notifier)
+        resolver = Resolver(source_group)
 
         old_lock_tree = None
         if conservative:

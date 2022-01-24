@@ -3,12 +3,12 @@ import os
 import pathlib
 
 import click
+from roo.console import console
 from roo.locker import Locker
 from roo.parsers.exceptions import ParsingError
 from roo.parsers.lock import Lock
 from roo.parsers.rproject import RProject
 from roo.resolver import CannotResolveError
-from roo.user_notifier import UserNotifier
 
 
 logger = logging.getLogger(__file__)
@@ -26,11 +26,10 @@ logger = logging.getLogger(__file__)
     help="Ensures that only minimal changes will be performed to the lock."
 )
 def lock(quiet, overwrite, conservative):
-    notifier = UserNotifier(quiet)
-    _ensure_lock(overwrite, notifier, conservative)
+    _ensure_lock(overwrite, conservative)
 
 
-def _ensure_lock(overwrite, notifier, conservative) -> Lock:
+def _ensure_lock(overwrite, conservative) -> Lock:
     """Ensure that a lock file is present and sync"""
     try:
         rproject = RProject.parse(pathlib.Path(".") / "rproject.toml")
@@ -50,13 +49,14 @@ def _ensure_lock(overwrite, notifier, conservative) -> Lock:
     try:
         old_lock = Lock.parse(lock_path)
     except FileNotFoundError:
-        notifier.warning("Lockfile not found. Creating it.")
+        console().print("[warning]Lockfile not found. Creating it.[/warning]")
     except ParsingError as e:
         logger.exception("Unable to parse current lockfile")
-        notifier.error(f"Existing Lockfile could not be parsed: {e}.")
+        console().print(
+            f"[error]Existing Lockfile could not be parsed: {e}.[/error]")
         raise click.ClickException(f"Unable to parse current lock file: {e}")
 
-    locker = Locker(notifier)
+    locker = Locker()
     try:
         new_lock = locker.lock(rproject, old_lock, conservative)
     except CannotResolveError as e:
