@@ -190,17 +190,18 @@ class Resolver:
         """Resolve a VCS unresolved dependency"""
         logger.info(f"Cloning {unresolved.name} from {unresolved.url}")
 
-        vcs_store = VCSStore(unresolved.url)
+        vcs_store = VCSStore()
         try:
             vcs_clone_shallow(
                 unresolved.vcs_type,
                 unresolved.url,
                 unresolved.ref,
-                vcs_store.clone_dir(unresolved.ref))
+                vcs_store.clone_dir(unresolved.url, unresolved.ref))
         except ValueError as e:
             raise CannotResolveError(f"VCS clone failed: {e}") from None
 
-        package = DirPackage(vcs_store.clone_dir(unresolved.ref))
+        package = DirPackage(
+            vcs_store.clone_dir(unresolved.url, unresolved.ref))
         subdep_list = _extract_subdeps(package)
         for subdep in subdep_list:
             subdep.categories = unresolved.categories
@@ -214,7 +215,7 @@ class Resolver:
             dependencies=subdep_list
         )
 
-        vcs_store.clear_clone(unresolved.ref)
+        vcs_store.clear()
         return resolved_dep
 
     def _resolve_tree_depth_first(self, root: RootDependency) -> None:
