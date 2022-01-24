@@ -128,14 +128,12 @@ class Installer:
         logger.info(f"Cloning {dep.name} from VCS {dep.url}")
 
         cache = VCSStore(dep.url)
-        console().print(
-            f"  - Cloning [package]{dep.name}[/package] "
-            f"from {dep.url}"
-        )
-
-        cache.clear_clone(dep.ref)
-        vcs_clone_shallow(dep.vcs_type, dep.url, dep.ref,
-                          cache.clone_dir(dep.ref))
+        with console().status(
+                f"Cloning [package]{dep.name}[/package] "
+                f"from {dep.url}"):
+            cache.clear_clone(dep.ref)
+            vcs_clone_shallow(dep.vcs_type, dep.url, dep.ref,
+                              cache.clone_dir(dep.ref))
 
     def _ensure_local_source_package(self, dep: ResolvedSourceDependency):
         """Ensures that the packages have been downloaded
@@ -146,20 +144,20 @@ class Installer:
             return
 
         with console().status(
-                f"[message]Downloading "
+                f"[message]Downloading[/message] "
                 f"[package]{source_package.name}[/package] "
                 f"([version]{source_package.version}[/version]) "
-                f"from {source_package.source.name}[/message]"):
+                f"from {source_package.source.name}"):
             # Either we don't have the package or the file is there but it
             # was cut short during download so it's broken. Act as if it's
             # not there.
             source_package.download()
 
         console().print(
-            f":white_check_mark: [success]Downloaded "
+            f":white_check_mark: [success]Downloaded[/success] "
             f"[package]{source_package.name}[/package] "
             f"([version]{source_package.version}[/version]) "
-            f"from {source_package.source.name}[/success]"
+            f"from {source_package.source.name}"
         )
 
         if not source_package.hash_match():
@@ -193,21 +191,20 @@ class Installer:
         logger.info(f"Using vcs store at {vcs_store.base_dir}")
 
         with console().status(
-                f"[message]Cloning from VCS {dep.url}[/message]") as status:
+                f"[message]Cloning from VCS {dep.url}@{dep.ref}[/message]"
+        ) as status:
             try:
                 vcs_clone_shallow(
                     dep.vcs_type, dep.url, dep.ref, vcs_store.clone_dir(
                         dep.ref)
                 )
             except ValueError as e:
-                console().print("[error]VCS clone failed: {e}[/error]")
                 raise InstallationError(f"VCS clone failed: {e}") from None
 
             if installed_version is not None:
                 status.update(
-                    status=f"[message]"
-                           f"Removing currently installed [package]{dep.name}"
-                           f"[/package][/message]"
+                    status=f"[message]Removing currently installed[/message] "
+                           f"[package]{dep.name}[/package]"
                 )
                 executor.remove(dep.name)
 
@@ -219,18 +216,18 @@ class Installer:
             except ExecutorError as e:
                 raise InstallationError(f"Unable to install {dep.name}: {e}")
 
-            console().print(
-                f":white_check_mark: [success]Installed [package]{dep.name}"
-                f"[/package][/success]")
-
-        # Delete the cache only in case of success, so it's easier to check
-        # what went wrong in case of error.
-        vcs_store.clear_clone(dep.ref)
-
         logger.info(
             f"Package {dep.name} successfully "
             f"installed in environment {environment.name}"
         )
+
+        console().print(
+            f":white_check_mark: [success]Installed[/success] "
+            f"[package]{dep.name}[/package] from VCS {dep.url}@{dep.ref}")
+
+        # Delete the cache only in case of success, so it's easier to check
+        # what went wrong in case of error.
+        vcs_store.clear_clone(dep.ref)
 
     def _install_package_from_source(self,
                                      dep: ResolvedSourceDependency,
@@ -257,41 +254,45 @@ class Installer:
         )
 
         op_str = "Installing"
-        version_str = package.version
+        version_str = f"[version]{package.version}[/version]"
         cached_str = ""
         if installed_version is not None:
             op_str = "Replacing"
-            version_str = f"{installed_version} -> {package.version}"
+            version_str = (
+                f"[version]{installed_version}[/version] -> "
+                f"[version]{package.version}[/version]"
+            )
         if cache.has_build(package.name, package.version):
             cached_str = "(from cache)"
 
         with console().status(
-                f"[message]{op_str} [package]{package.name}[/package] "
-                f"([version]{version_str}[/version]) {cached_str}[/message]"
+                f"[message]{op_str}[/message] "
+                f"[package]{package.name}[/package] "
+                f"([version]{version_str}[/version]) {cached_str}"
         ) as status:
 
             if installed_version is not None:
                 status.update(
-                    f"[message]Removing previous version "
+                    f"[message]Removing previous version[/message]"
                     f"[package]{package.name}[/package] "
-                    f"([version]{installed_version}[/version])[/message]")
+                    f"([version]{installed_version}[/version])")
                 executor.remove(package.name)
 
             if cache.has_build(package.name, package.version):
                 status.update(
-                    f"[message]Reinstalling "
+                    f"[message]Reinstalling[/message] "
                     f"[version]{package.name}[/version] "
                     f"([version]{package.version}[/version]) "
-                    f"from cache[/message]")
+                    f"(from cache)")
                 cache.restore_build(
                     package.name,
                     package.version,
                     environment.lib_dir / dep.name)
             else:
                 status.update(
-                    f"[message]Building "
+                    f"[message]Building[/message] "
                     f"[version]{package.name}[/version] "
-                    f"([version]{package.version}[/version])[/message]")
+                    f"([version]{package.version}[/version])")
                 try:
                     executor.install(cast(pathlib.Path, package.local_path))
                 except ExecutorError as e:
@@ -306,9 +307,9 @@ class Installer:
             f"installed in environment {environment.name}"
         )
         console().print(
-            f":white_check_mark: [success]Installed "
+            f":white_check_mark: [success]Installed[/success] "
             f"[package]{package.name}[/package] "
-            f"([version]{package.version}[/version]) {cached_str}[/success]"
+            f"({version_str}) {cached_str}"
         )
 
 
