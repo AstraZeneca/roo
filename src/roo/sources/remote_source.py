@@ -37,6 +37,10 @@ class RemoteSource(SourceABC):
         self._packages: Dict[str, List[SourcePackage]] = {}
 
     @property
+    def location(self) -> str:
+        return self.url
+
+    @property
     def archive_url(self) -> str:
         return urljoin(self.contrib_url, "Archive/")
 

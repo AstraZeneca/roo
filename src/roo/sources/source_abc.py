@@ -10,6 +10,11 @@ class SourceABC(ABC):
     def __init__(self, name):
         self.name = name
 
+    @property
+    @abstractmethod
+    def location(self) -> str:
+        """Returns the location of the source, as a generic uri string"""
+
     @abstractmethod
     def find_package(self,
                      name: str,

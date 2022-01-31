@@ -1,6 +1,7 @@
 import pathlib
 
 import click
+from roo.console import console
 from roo.parsers.rproject import RProject
 from roo.sources.source_group import create_source_group_from_config_list
 
@@ -24,11 +25,18 @@ def package_search(name):
 
     source_group = create_source_group_from_config_list(rproject.sources)
     for source in source_group.all_sources:
-        click.echo(f"Source: {source.name}")
-        for package in source.find_package_versions(name):
-            click.echo("    " + package.versioned_name +
-                       (" (Active) " if package.active else ""))
-        click.echo("")
+        console().print(
+            f":earth_africa: [source]{source.name}[/source] "
+            f"({source.location})")
+        with console().status("Searching ... "):
+            for package in source.find_package_versions(name):
+                icon = ":glowing_star:" if package.active else ":package:"
+                console().print(
+                    f"  {icon} [package]{package.name}[/package]"
+                    f" [version]{package.version}" +
+
+                    (" ([active]Active[/active]) " if package.active else ""))
+        console().print("")
 
 
 @package.command(name="dependencies",
