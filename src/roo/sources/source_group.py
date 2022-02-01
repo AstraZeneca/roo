@@ -67,8 +67,10 @@ class SourceGroup:
         # same package version is found in two or more sources, we want to
         # honor the order and install from the first source, not the second.
 
-        # So, first we get all the packages that respect the constraint
-        for sources_at_priority in self._sources_by_priority():
+        # So, first we get all the packages that respect the constraint.
+        # We start from the highest priority and descend. Note that
+        # sources_by_priority returns from lowest to highest.
+        for sources_at_priority in reversed(self._sources_by_priority()):
             available_packages: List[SourcePackage] = []
             for source in sources_at_priority:
                 packages = source.find_package_versions(name)
@@ -107,6 +109,10 @@ class SourceGroup:
         raise PackageNotFoundError(f"{name} {constraint}")
 
     def _sources_by_priority(self) -> List[List[SourceABC]]:
+        """Returns the sources grouped together by priority, as a list
+        of lists. Groups are ordered from the lowest to the highest priority.
+        inside each group, they preserve the order of addition.
+        """
         d: Dict[int, List[SourceABC]] = {}
         for source in self.all_sources:
             sources_for_priority = d.setdefault(source.priority, [])
