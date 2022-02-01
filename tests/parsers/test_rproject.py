@@ -17,6 +17,8 @@ def test_rproject_parsing(fixture_file):
         Version.parse("0.4.2")
 
     assert len(rproject.sources) == 2
+    assert rproject.sources[0].priority == 0
+    assert rproject.sources[1].priority == 1
     assert rproject.content_hash == \
         '737c399d1a307e03002f7c4e2fa9908bec5afabeaf0663743d1afd384bbd1100'
     assert rproject.metadata

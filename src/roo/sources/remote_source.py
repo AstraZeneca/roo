@@ -22,8 +22,9 @@ class RemoteSource(SourceABC):
     """
 
     def __init__(self, name: str, url: str,
-                 proxy: Optional[Union[str, bool]] = None):
-        super().__init__(name)
+                 proxy: Optional[Union[str, bool]] = None,
+                 priority: int = 0):
+        super().__init__(name, priority)
         self.url = url
         self.proxy = proxy
         self._cache = SourceCache(self.url)
