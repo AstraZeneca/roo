@@ -51,7 +51,7 @@ class Source:
     # If True, the source will contain packages that will squash
     # packages from any other source, but only for those packages
     # that exist on this source.
-    overriding: bool = False
+    priority: int = 0
 
     @classmethod
     def fromdict(cls, d: Dict[str, Any]) -> Source:
@@ -59,7 +59,7 @@ class Source:
             name=d["name"],
             url=d["url"],
             proxy=d.get("proxy"),
-            overriding=d["overriding"]
+            priority=d.get("priority", 0)
         )
 
 

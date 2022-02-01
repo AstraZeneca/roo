@@ -23,11 +23,10 @@ class RemoteSource(SourceABC):
 
     def __init__(self, name: str, url: str,
                  proxy: Optional[Union[str, bool]] = None,
-                 overriding: bool = False):
-        super().__init__(name)
+                 priority: int = 0):
+        super().__init__(name, priority)
         self.url = url
         self.proxy = proxy
-        self.overriding = overriding
         self._cache = SourceCache(self.url)
         self._session = session_with_proxy(self.proxy)
 

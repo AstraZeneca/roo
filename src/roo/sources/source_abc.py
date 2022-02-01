@@ -7,8 +7,9 @@ from .source_package import SourcePackage
 class SourceABC(ABC):
     """Abstract base class of a source of packages"""
 
-    def __init__(self, name):
+    def __init__(self, name, priority):
         self.name = name
+        self.priority = priority
 
     @abstractmethod
     def find_package(self,

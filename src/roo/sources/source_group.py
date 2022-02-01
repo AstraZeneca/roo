@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, TYPE_CHECKING, Union
+from typing import List, TYPE_CHECKING, Union, Dict
 from collections import OrderedDict
 import logging
 
@@ -39,10 +39,9 @@ class SourceGroup:
         return self.sources[name]
 
     @property
-    def all_sources(self):
+    def all_sources(self) -> List[SourceABC]:
         """
-        Return a list of the available sources. The order
-        depends on the priority
+        Return a list of the available sources.
         """
         return list(self.sources.values())
 
@@ -56,42 +55,68 @@ class SourceGroup:
         logger.info(f"Finding most recent package for {name} "
                     f"with constraint {constraint}")
 
-        # Little bit of gymnastic here. We need to keep the order of the
-        # packages with respect to the source, because if the same package
-        # version is found in two or more sources, we want to honor the order
-        # and install from the first source, not the second.
+        # Little bit of gymnastic here.
+        #
+        # First we want to use the priority to search the package.
+        # If a package is found on a given priority layer, we won't continue
+        # to lower priorities, _even_ if there are higher versions in the
+        # lower priority sources. This is to prevent "takeover" from
+        # external sources of internal packages.
+        # Additionally, at a given layer of priority, we want to keep the
+        # order of the packages with respect to the source, because if the
+        # same package version is found in two or more sources, we want to
+        # honor the order and install from the first source, not the second.
+
         # So, first we get all the packages that respect the constraint
-        available_packages: List[SourcePackage] = []
-        for source in self.all_sources:
-            packages = source.find_package_versions(name)
-            logger.info(f"source {source.name} has package versions "
-                        f"{[p.version for p in packages]}")
-            packages = [
-                package for package in packages
-                if constraint.allows(Version.parse(package.version))
+        for sources_at_priority in self._sources_by_priority():
+            available_packages: List[SourcePackage] = []
+            for source in sources_at_priority:
+                packages = source.find_package_versions(name)
+                logger.info(
+                    f"Source {source.name} with priority {source.priority} "
+                    f"has package versions {[p.version for p in packages]}"
+                )
+                packages = [
+                    package for package in packages
+                    if constraint.allows(Version.parse(package.version))
+                ]
+                available_packages.extend(packages)
+
+            if len(available_packages) == 0:
+                # Found not a single one? Try next priority
+                continue
+
+            # Then find out the most recent version of the ones available.
+            highest_version = sorted([
+                Version.parse(package.version)
+                for package in available_packages])[-1]
+
+            # and filter away the packages that are too low.
+            # Note that we could have the same package many times, once
+            # per each source. However, the sorting is stable so we get
+            # the first source always.
+            available_packages = [
+                package for package in available_packages
+                if Version.parse(package.version) == highest_version
             ]
-            available_packages.extend(packages)
 
-        # Found not a single one? bail out.
-        if len(available_packages) == 0:
-            raise PackageNotFoundError(f"{name} {constraint}")
+            # and finally, return the one from the first source
+            return available_packages[0]
 
-        # Then find out the most recent version of the ones available.
-        highest_version = sorted([
-            Version.parse(package.version)
-            for package in available_packages])[-1]
+        # We tried all priorities and found nothing.
+        raise PackageNotFoundError(f"{name} {constraint}")
 
-        # and filter away the packages that are too low.
-        # Note that we could have the same package many times, once
-        # per each source. However, the sorting is stable so we get the first
-        # source always.
-        available_packages = [
-            package for package in available_packages
-            if Version.parse(package.version) == highest_version
-        ]
+    def _sources_by_priority(self) -> List[List[SourceABC]]:
+        d: Dict[int, List[SourceABC]] = {}
+        for source in self.all_sources:
+            sources_for_priority = d.setdefault(source.priority, [])
+            sources_for_priority.append(source)
 
-        # and finally, return the one from the first source
-        return available_packages[0]
+        ret = []
+        for idx in sorted(d.keys()):
+            ret.append(d[idx])
+
+        return ret
 
 
 def create_source_group_from_config_list(
