@@ -18,9 +18,9 @@ def test_local_source(fixture_file, tmpdir):
     assert "src/contrib/Archive" in str(source.archive_path)
 
     assert len(source.find_package_versions("Rchecker")) == 3
-    assert [pkg.version
-            for pkg in source.find_package_versions("Rchecker")] == [
-        "1.0.0", "0.3.0", "0.5.0"
+    assert sorted([pkg.version
+                   for pkg in source.find_package_versions("Rchecker")]) == [
+        "0.3.0", "0.5.0", "1.0.0",
     ]
 
     package = source.find_package("Rchecker", "1.0.0")

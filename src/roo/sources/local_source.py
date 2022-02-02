@@ -28,7 +28,7 @@ class LocalSource(SourceABC):
 
     @property
     def archive_path(self) -> pathlib.Path:
-        return self.contrib_path / "Archive/"
+        return self.contrib_path / "Archive"
 
     @property
     def contrib_path(self) -> pathlib.Path:
