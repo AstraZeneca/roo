@@ -6,6 +6,6 @@ def test_source_cache():
 
     assert str(cache.root_dir).endswith(".roo/cache")
     assert str(cache.base_dir).endswith(
-        ".roo/cache/source/cran.r-project.org/"
+        ".roo/cache/source/remote/cran.r-project.org/"
         "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     )
