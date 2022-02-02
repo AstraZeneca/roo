@@ -56,7 +56,8 @@ class LocalSource(SourceABC):
 
     def find_package_versions(self, name: str) -> List[SourcePackage]:
         """
-        Finds all available versions of a package
+        Finds all available versions of a package. Note that packages
+        are returned in arbitrary order.
 
         Args:
             name: the name of the package
@@ -93,18 +94,23 @@ class LocalSource(SourceABC):
         Returns: the list of packages
 
         """
+        # blank entry is reserved for active packages.
         packages = self._index_cache.get('')
         if packages is not None:
             return packages
 
         packages = []
-        for entry in pathlib.Path(self.url).iterdir():
+
+        if not self.contrib_path.exists():
+            return packages
+
+        for entry in self.contrib_path.iterdir():
             if entry == "PACKAGES.gz":
                 continue
 
             elif entry.suffix.endswith("gz"):
                 pkg = SourcePackage(
-                    filename=str(entry),
+                    filename=str(entry.name),
                     active=True,
                     url=str(self.contrib_path / entry),
                     source=self
@@ -119,7 +125,6 @@ class LocalSource(SourceABC):
                 packages.append(pkg)
 
         self._index_cache[''] = packages
-
         return packages
 
     def _archived_packages(self, package_name: str) -> list:
@@ -157,14 +162,14 @@ class LocalSource(SourceABC):
         pkgfiles, dirs = _get_pkgfiles_and_dirs_at_path(package_subdir)
 
         # This gets the CRAN format
-        for filename in pkgfiles:
-            if filename in packages:
+        for filepath in pkgfiles:
+            if filepath.name in packages:
                 continue
 
             pkg = SourcePackage(
-                filename=filename,
+                filename=filepath.name,
                 active=False,
-                url=str(package_subdir / filename),
+                url=str(filepath),
                 source=self
             )
             if self._cache.has_package_file(pkg.name, pkg.version):
@@ -174,7 +179,7 @@ class LocalSource(SourceABC):
                 description_file = self._cache.get_package_description_file(
                     pkg.name, pkg.version)
                 pkg.description = Description.parse(description_file)
-            packages[filename] = pkg
+            packages[filepath.name] = pkg
 
         # This gets the Artifactory format
         for dir_ in dirs:
@@ -184,14 +189,14 @@ class LocalSource(SourceABC):
             versioned_subdir = package_subdir / dir_
             pkgfiles, _ = _get_pkgfiles_and_dirs_at_path(versioned_subdir)
 
-            for filename in pkgfiles:
-                if filename in packages:
+            for filepath in pkgfiles:
+                if filepath.name in packages:
                     continue
 
                 pkg = SourcePackage(
-                    filename=filename,
+                    filename=filepath.name,
                     active=False,
-                    url=str(versioned_subdir / filename),
+                    url=str(filepath),
                     source=self
                 )
                 if self._cache.has_package_file(pkg.name, pkg.version):
@@ -201,7 +206,7 @@ class LocalSource(SourceABC):
                     desc_file = self._cache.get_package_description_file(
                         pkg.name, pkg.version)
                     pkg.description = Description.parse(desc_file)
-                packages[filename] = pkg
+                packages[filepath.name] = pkg
 
         self._index_cache[package_name] = list(packages.values())
         return self._index_cache[package_name]
@@ -211,10 +216,14 @@ def _get_pkgfiles_and_dirs_at_path(path: pathlib.Path) -> tuple:
     """Utility function to get the tar.gz files and the directories
     at a given URL.
     """
-    packages, dirs = [], []
+    packages: List[pathlib.Path] = []
+    dirs: List[pathlib.Path] = []
+
+    if not path.exists():
+        return packages, dirs
 
     for entry in path.iterdir():
-        if entry == "PACKAGES.gz":
+        if entry.name == "PACKAGES.gz":
             continue
         elif entry.suffix.endswith("gz"):
             packages.append(entry)

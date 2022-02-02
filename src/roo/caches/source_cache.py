@@ -6,7 +6,7 @@ import shutil
 import pathlib
 import atomicwrites
 from urllib.parse import urlparse
-from typing import Union
+from typing import Union, Optional
 
 
 class SourceCache:
@@ -21,11 +21,16 @@ class SourceCache:
     need to extract the DESCRIPTION file in the cache anyway.
     """
 
-    def __init__(self, source_url: str):
+    def __init__(self,
+                 source_url: str,
+                 root_dir: Optional[pathlib.Path] = None):
         """Provide access to the cache section for a given source url
         (if remote), or local path (if local). In any case, we take a string.
         """
-        self.root_dir = pathlib.Path("~/.roo/cache").expanduser()
+        if root_dir is None:
+            root_dir = pathlib.Path("~/.roo/cache").expanduser()
+
+        self.root_dir = root_dir
         self.source_url = source_url
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
