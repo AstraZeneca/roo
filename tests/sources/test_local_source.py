@@ -43,13 +43,7 @@ def test_local_source(fixture_file, tmpdir):
 
     package.ensure_local()
 
-    assert package.local_path == (
-        tmpdir_path /
-        "source" /
-        "local" /
-        "fe9bc56e2601a1fa32ee5fc1cbddebee082dff67105cdb798cb58aa24bb12687" /
-        "Rchecker" /
-        "Rchecker_0.3.0.tar.gz")
+    assert package.local_path is not None
 
     assert package.has_local_file()
     assert package.description is not None
