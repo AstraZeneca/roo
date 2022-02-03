@@ -168,7 +168,7 @@ class Installer:
             # Either we don't have the package or the file is there but it
             # was cut short during download so it's broken. Act as if it's
             # not there.
-            source_package.download()
+            source_package.retrieve()
 
         console().print(
             f":white_check_mark: [success]Downloaded[/success] "
