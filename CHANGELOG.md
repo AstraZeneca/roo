@@ -1,5 +1,10 @@
 # Changelog
 
+
+## 0.12.1
+
+- #45 Fixed restrictive detection of R path on linux machines
+
 ## 0.12.0
 
 - #43 Added Documentation on usage
