@@ -358,7 +358,10 @@ def _find_r_executable_path() -> pathlib.Path:
 
 _BASE_WINDOWS_R_INSTALL_PATH = pathlib.Path(r"C:\Program Files\R")
 _BASE_MACOS_R_INSTALL_PATH = pathlib.Path("/Library/Frameworks/R.framework/")
-_BASE_LINUX_R_INSTALL_PATH = pathlib.Path("/usr/lib/R/")
+_BASE_LINUX_R_INSTALL_PATH_LIST = [
+    pathlib.Path("/usr/lib/R/"),
+    pathlib.Path("/usr/local/")
+]
 
 
 def _find_all_installed_r_homes() -> List[Dict]:
@@ -406,17 +409,17 @@ def _find_all_installed_r_homes() -> List[Dict]:
         except (FileNotFoundError, KeyError):
             pass
     elif plat == "Linux":
-        try:
-            version = _get_rcmd_version(
-                _BASE_LINUX_R_INSTALL_PATH / "bin" / "Rcmd")
-            installed_r.append({
-                "home_path": _BASE_LINUX_R_INSTALL_PATH,
-                "executable_path": _BASE_LINUX_R_INSTALL_PATH / "bin" / "R",
-                "version": version,
-                "active": True,
-            })
-        except (FileNotFoundError, KeyError):
-            pass
+        for base_path in _BASE_LINUX_R_INSTALL_PATH_LIST:
+            try:
+                version = _get_rcmd_version(base_path / "bin" / "Rcmd")
+                installed_r.append({
+                    "home_path": base_path,
+                    "executable_path": base_path / "bin" / "R",
+                    "version": version,
+                    "active": True,
+                })
+            except (FileNotFoundError, KeyError):
+                pass
 
     return installed_r
 
@@ -473,5 +476,5 @@ def _find_highest_active_version() -> Union[Dict, None]:
             reverse=True
         )[0]
         return highest_version
-    except KeyError:
+    except IndexError:
         return None
