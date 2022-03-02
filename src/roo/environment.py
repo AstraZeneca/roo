@@ -473,5 +473,5 @@ def _find_highest_active_version() -> Union[Dict, None]:
             reverse=True
         )[0]
         return highest_version
-    except KeyError:
+    except IndexError:
         return None
