@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.13.0
+
+- #52 Added roo environment options to see the available R versions to use when generating an environment
+- #50 Added --r-version to environment init to specify the R version to use for the environment
+
 
 ## 0.12.1
 
