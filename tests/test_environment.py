@@ -5,7 +5,7 @@ from unittest import mock
 import pytest
 
 from roo.environment import Environment, ExistentEnvironment, \
-    _find_all_installed_r_homes, _get_plist_version, \
+    find_all_installed_r_homes, _get_plist_version, \
     _find_highest_active_version, _find_active_r_version
 from roo.files.rprofile import RProfile
 from roo.installer import Installer
@@ -124,7 +124,7 @@ def test_find_all_installed_r(fixture_file):
                        ):
         mock_system.return_value = "Windows"
 
-        installed = _find_all_installed_r_homes()
+        installed = find_all_installed_r_homes()
         for entry in [
                 {
                     "home_path": fixture_file(
@@ -156,7 +156,7 @@ def test_find_all_installed_r(fixture_file):
                        ):
         mock_system.return_value = "Darwin"
 
-        installed = _find_all_installed_r_homes()
+        installed = find_all_installed_r_homes()
 
         for entry in [
                 {

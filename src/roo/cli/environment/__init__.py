@@ -5,8 +5,7 @@ from roo.console import console
 from roo.r_executor import ExecutorError
 
 from roo.environment import Environment, available_environments, \
-    UnexistentEnvironment, enabled_environment
-
+    UnexistentEnvironment, enabled_environment, find_all_installed_r_homes
 
 logger = logging.getLogger(__file__)
 
@@ -137,3 +136,17 @@ def environment_remove(base_dir, name):
     except Exception as e:
         logger.exception("Unable to initialise environment")
         raise click.ClickException(f"Unable to remove environment: {e}")
+
+
+@environment.command(name="options",
+                     help=(
+                         "Show all found R executables that can be assigned "
+                         "to an environment."
+                     ))
+def environment_options():
+    all_r_homes = find_all_installed_r_homes()
+    for entry in all_r_homes:
+        console().print(
+            ("* " if entry["active"] else "  ") +
+            f"[version]{entry['version']}[/version] {entry['home_path']}"
+        )
