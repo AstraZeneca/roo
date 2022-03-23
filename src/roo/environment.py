@@ -343,11 +343,15 @@ def _find_r_executable_path(r_version: Optional[str] = None) -> pathlib.Path:
     # and pick the highest active version. If nothing else works, we just
     # use whatever which R returns.
 
-    if r_version is None:
-        active = _find_highest_active_version()
-    else:
+    if r_version is not None:
         active = _find_active_r_version(r_version)
+        if active is None:
+            raise FileNotFoundError(
+                f"Unable to find active R executable for version {r_version}"
+            )
+        return cast(pathlib.Path, active["executable_path"])
 
+    active = _find_highest_active_version()
     if active is not None:
         return cast(pathlib.Path, active["executable_path"])
 
@@ -373,7 +377,7 @@ _BASE_LINUX_R_INSTALL_PATH_LIST = [
 ]
 
 
-def _find_all_installed_r_homes() -> List[Dict]:
+def find_all_installed_r_homes() -> List[Dict]:
     """Finds all available installed R homes.
     The order is arbitrary and depends on filesystem ordering.
     Priority must be decided outside.
@@ -473,10 +477,10 @@ def _get_rcmd_version(path: pathlib.Path) -> str:
     raise KeyError("Invalid plist file")
 
 
-def _find_highest_active_version() -> Union[Dict, None]:
+def _find_highest_active_version() -> Optional[Dict]:
 
     active_homes = filter(lambda x: x["active"] is True,
-                          _find_all_installed_r_homes())
+                          find_all_installed_r_homes())
 
     try:
         highest_version = sorted(
@@ -493,7 +497,7 @@ def _find_highest_active_version() -> Union[Dict, None]:
 def _find_active_r_version(r_version: str) -> Optional[Dict]:
     active_homes = filter(
         lambda x: x["active"] is True and x["version"] == r_version,
-        _find_all_installed_r_homes()
+        find_all_installed_r_homes()
     )
 
     try:
