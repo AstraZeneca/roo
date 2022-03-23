@@ -1,7 +1,7 @@
 import re
 from xml.etree import ElementTree
 import textwrap
-from typing import Union, List, Dict, cast
+from typing import Union, List, Dict, cast, Optional
 import logging
 import pathlib
 import shutil
@@ -123,7 +123,8 @@ class Environment:
         shutil.rmtree(self.env_dir)
 
     def init(self,
-             r_executable_path: Union[pathlib.Path, None] = None,
+             r_version: Optional[str] = None,
+             r_executable_path: Optional[pathlib.Path] = None,
              overwrite: bool = False) -> None:
         """Initializes the environment
 
@@ -134,6 +135,11 @@ class Environment:
                        otherwise raise an error.
         """
 
+        if r_version is not None and r_executable_path is not None:
+            raise ValueError(
+                "Cannot specify both R version and R executable path"
+            )
+
         if self.exists():
             if not overwrite:
                 raise ExistentEnvironment(
@@ -142,7 +148,7 @@ class Environment:
             self.remove()
 
         if r_executable_path is None:
-            r_executable_path = _find_r_executable_path()
+            r_executable_path = _find_r_executable_path(r_version)
 
         if not r_executable_path.is_file():
             raise FileNotFoundError(
@@ -328,7 +334,7 @@ def enabled_environment(base_dir: pathlib.Path) -> Union[Environment, None]:
     return None
 
 
-def _find_r_executable_path() -> pathlib.Path:
+def _find_r_executable_path(r_version: Optional[str] = None) -> pathlib.Path:
     """
     Finds the R installation available on the machine.
     """
@@ -337,7 +343,10 @@ def _find_r_executable_path() -> pathlib.Path:
     # and pick the highest active version. If nothing else works, we just
     # use whatever which R returns.
 
-    active = _find_highest_active_version()
+    if r_version is None:
+        active = _find_highest_active_version()
+    else:
+        active = _find_active_r_version(r_version)
 
     if active is not None:
         return cast(pathlib.Path, active["executable_path"])
@@ -472,9 +481,27 @@ def _find_highest_active_version() -> Union[Dict, None]:
     try:
         highest_version = sorted(
             active_homes,
-            key=lambda x: [int(i) for i in x["version"].split(".")],
+            key=lambda x: [int(i) for i in x["version"].split(".")] +
+                          [x["executable_path"]],
             reverse=True
         )[0]
         return highest_version
+    except IndexError:
+        return None
+
+
+def _find_active_r_version(r_version: str) -> Optional[Dict]:
+    active_homes = filter(
+        lambda x: x["active"] is True and x["version"] == r_version,
+        _find_all_installed_r_homes()
+    )
+
+    try:
+        active_version = sorted(
+            active_homes,
+            key=lambda x: x["executable_path"],
+            reverse=True
+        )[0]
+        return active_version
     except IndexError:
         return None

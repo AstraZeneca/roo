@@ -6,7 +6,7 @@ import pytest
 
 from roo.environment import Environment, ExistentEnvironment, \
     _find_all_installed_r_homes, _get_plist_version, \
-    _find_highest_active_version
+    _find_highest_active_version, _find_active_r_version
 from roo.files.rprofile import RProfile
 from roo.installer import Installer
 from roo.parsers.lock import Lock
@@ -204,3 +204,26 @@ def test_find_highest_version(fixture_file):
             "version": "3.6.3",
             "active": True
         }
+
+
+def test_find_active_r_version(fixture_file):
+    with mock.patch("platform.system") as mock_system, \
+            mock.patch("roo.environment._BASE_WINDOWS_R_INSTALL_PATH",
+                       pathlib.Path(fixture_file(
+                           "r_installation_paths", "windows"))
+                       ):
+        mock_system.return_value = "Windows"
+
+        assert _find_active_r_version("3.6.0") == {
+            "home_path": fixture_file(
+                "r_installation_paths", "windows", "R-3.6.0"
+            ),
+            "executable_path": fixture_file(
+                "r_installation_paths", "windows", "R-3.6.0", "bin",
+                "R.exe"
+            ),
+            "version": "3.6.0",
+            "active": True
+        }
+
+        assert _find_active_r_version("3.5.0") is None
