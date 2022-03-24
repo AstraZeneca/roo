@@ -5,6 +5,7 @@ from typing import Union, List, Dict, cast, Optional
 import logging
 import pathlib
 import shutil
+import subprocess
 import platform
 import toml
 from .files.rprofile import RProfile
@@ -425,14 +426,16 @@ def find_all_installed_r_homes() -> List[Dict]:
         # First, try with the base paths
         for base_path in _BASE_LINUX_R_INSTALL_PATH_LIST:
             try:
-                version = _get_rcmd_version(base_path / "bin" / "Rcmd")
+                version = _get_r_version(base_path / "bin" / "R")
                 installed_r.append({
                     "home_path": base_path,
                     "executable_path": base_path / "bin" / "R",
                     "version": version,
                     "active": True,
                 })
-            except (FileNotFoundError, KeyError):
+            except (FileNotFoundError,
+                    subprocess.CalledProcessError,
+                    KeyError):
                 logger.exception("Failed option")
 
         # also try under opt, one version per subdir, which is how github
@@ -443,14 +446,16 @@ def find_all_installed_r_homes() -> List[Dict]:
             for entry in base_path.iterdir():
                 logger.info(f"Trying {entry.name}")
                 if re.match(r"\d+\.\d+\.\d+", str(entry.name)):
-                    version = _get_rcmd_version(entry / "bin" / "Rcmd")
+                    version = _get_r_version(entry / "bin" / "R")
                     installed_r.append({
                         "home_path": entry,
                         "executable_path": entry / "bin" / "R",
                         "version": version,
                         "active": True,
                     })
-        except (FileNotFoundError, KeyError):
+        except (FileNotFoundError,
+                subprocess.CalledProcessError,
+                KeyError):
             logger.exception("Failed option")
 
     return installed_r
@@ -482,18 +487,17 @@ def _get_plist_version(path: pathlib.Path) -> str:
     raise KeyError("Invalid plist file")
 
 
-def _get_rcmd_version(path: pathlib.Path) -> str:
-    """Extract the current version from the only place it can be found
-    on linux: the Rcmd file"""
-    with open(path) as f:
-        for line in f:
-            if line.startswith("R_VERSION"):
-                m = re.match(r"R_VERSION\s*=\s*(\d\.\d\.\d)", line)
-                if m is not None:
-                    version = m.group(1)
-                    return version
+def _get_r_version(path: pathlib.Path) -> str:
+    """Extract the current version from the run of the R executable"""
 
-    raise KeyError("Invalid plist file")
+    output = subprocess.check_output([path, "--version"], encoding="utf-8")
+
+    m = re.match(r"R version\s*(\d\.\d\.\d)", output)
+    if m is None:
+        raise KeyError("Unable to find version in R output")
+
+    version = m.group(1)
+    return version
 
 
 def _find_highest_active_version() -> Optional[Dict]:
