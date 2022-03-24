@@ -422,6 +422,7 @@ def find_all_installed_r_homes() -> List[Dict]:
         except (FileNotFoundError, KeyError):
             pass
     elif plat == "Linux":
+        # First, try with the base paths
         for base_path in _BASE_LINUX_R_INSTALL_PATH_LIST:
             try:
                 version = _get_rcmd_version(base_path / "bin" / "Rcmd")
@@ -433,6 +434,23 @@ def find_all_installed_r_homes() -> List[Dict]:
                 })
             except (FileNotFoundError, KeyError):
                 pass
+
+        # also try under opt, one version per subdir, which is how github
+        # seem to do it. We really need to make this whole detection
+        # thing configurable
+        try:
+            base_path = pathlib.Path("/opt/R/")
+            for entry in base_path.iterdir():
+                if re.match(r"\d+\.\d+\.\d+", str(entry.name)):
+                    version = _get_rcmd_version(entry / "bin" / "Rcmd")
+                    installed_r.append({
+                        "home_path": entry,
+                        "executable_path": entry / "bin" / "R",
+                        "version": version,
+                        "active": True,
+                    })
+        except (FileNotFoundError, KeyError):
+            pass
 
     return installed_r
 
