@@ -171,7 +171,7 @@ class Installer:
             source_package.retrieve()
 
         console().print(
-            f":white_check_mark: [success]Downloaded[/success] "
+            f"[success]\u2022[/success] Downloaded "
             f"[package]{source_package.name}[/package] "
             f"([version]{source_package.version}[/version]) "
             f"from {source_package.source.name}"
@@ -319,7 +319,7 @@ class Installer:
             f"installed in environment {environment.name}"
         )
         console().print(
-            f":white_check_mark: [success]Installed[/success] "
+            f"[success]\u2022[/success] Installed "
             f"[package]{package.name}[/package] "
             f"({version_str}) {cached_str}"
         )
