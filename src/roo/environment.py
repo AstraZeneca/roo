@@ -433,7 +433,7 @@ def find_all_installed_r_homes() -> List[Dict]:
                     "active": True,
                 })
             except (FileNotFoundError, KeyError):
-                pass
+                logger.exception("Failed option")
 
         # also try under opt, one version per subdir, which is how github
         # seem to do it. We really need to make this whole detection
@@ -441,6 +441,7 @@ def find_all_installed_r_homes() -> List[Dict]:
         try:
             base_path = pathlib.Path("/opt/R/")
             for entry in base_path.iterdir():
+                logger.info(f"Trying {entry.name}")
                 if re.match(r"\d+\.\d+\.\d+", str(entry.name)):
                     version = _get_rcmd_version(entry / "bin" / "Rcmd")
                     installed_r.append({
@@ -450,7 +451,7 @@ def find_all_installed_r_homes() -> List[Dict]:
                         "active": True,
                     })
         except (FileNotFoundError, KeyError):
-            pass
+            logger.exception("Failed option")
 
     return installed_r
 
