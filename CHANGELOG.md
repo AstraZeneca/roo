@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.1
+
+- PR #56 Ensure that discovery of R versions on linux is done invoking the command, rather than Rcmd
+
 ## 0.13.0
 
 - #52 Added roo environment options to see the available R versions to use when generating an environment
