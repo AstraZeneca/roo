@@ -5,7 +5,7 @@ from typing import List, Optional, TYPE_CHECKING, cast
 
 from roo.sources.package_abc import PackageABC
 
-from ..hashing import sha256path
+from ..hashing import sha256path, md5path
 from ..parsers.description import Description
 
 if TYPE_CHECKING:
@@ -82,6 +82,12 @@ class SourcePackage(PackageABC):
         downloaded, this call will download it first."""
         self.ensure_local()
         return "sha256:"+sha256path(cast(str, self.local_path))
+
+    @property
+    def md5(self) -> str:
+        """Returns the md5 for renv consumption"""
+        self.ensure_local()
+        return md5path(cast(pathlib.Path, self.local_path))
 
     @property
     def dependencies(self) -> List[Dependency]:
