@@ -66,3 +66,10 @@ def test_use_vanilla(tmpdir, fixture_file):
     with mock.patch("subprocess.check_call") as check_call_patched:
         executor.install(fixture_file("Rchecker"))
         assert "--use-vanilla" not in check_call_patched.call_args[0][0]
+
+
+def test_rscript_path(tmpdir, fixture_file):
+    env = Environment(base_dir=pathlib.Path(tmpdir), name="hello")
+    env.init()
+    executor = RBoundExecutor(env)
+    assert "Rscript" in executor.rscript_executable_path

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import platform
 import pathlib
 import re
 import subprocess
@@ -129,6 +130,20 @@ class RExecutorBase:
     @property
     def r_executable_path(self) -> pathlib.Path:
         raise NotImplementedError()
+
+    @property
+    def rscript_executable_path(self) -> pathlib.Path:
+        """
+        Returns the Rscript executable path.
+        We assume it's on the same directory of the R executable
+        """
+        plat = platform.system()
+        if plat == "Windows":
+            rscript_exe = "Rscript.exe"
+        else:
+            rscript_exe = "Rscript"
+
+        return self.r_executable_path.parent / rscript_exe
 
     def _remove_options(self):
         raise NotImplementedError()
