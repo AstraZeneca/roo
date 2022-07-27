@@ -3,6 +3,7 @@ from roo.cli.lock import _ensure_lock
 from roo.exporters.lock.base_exporter import BaseExporter
 from roo.exporters.lock.lock_csv_exporter import LockCSVExporter
 from roo.exporters.lock.lock_packrat_exporter import LockPackratExporter
+from roo.exporters.lock.lock_renv_exporter import LockRenvExporter
 
 
 @click.group(help="Commands to export data and information to different tools")
@@ -11,7 +12,7 @@ def export():
 
 
 @export.command(name="lock", help="Exports lock to different formats")
-@click.argument("format", type=click.Choice(["csv", "packrat"]))
+@click.argument("format", type=click.Choice(["csv", "packrat", "renv"]))
 @click.argument("output", type=click.Path(writable=True))
 def export_lock(format, output):
     lock_file = _ensure_lock(False, False)
@@ -21,6 +22,8 @@ def export_lock(format, output):
         exporter = LockCSVExporter()
     elif format == "packrat":
         exporter = LockPackratExporter()
+    elif format == "renv":
+        exporter = LockRenvExporter()
     else:
         raise RuntimeError(f"Programming error. Not matched format {format}")
 
