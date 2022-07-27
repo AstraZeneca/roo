@@ -15,10 +15,9 @@ class LockRenvExporter(BaseExporter):
     def export(self, lock: Lock, path: pathlib.Path):
         if lock.has_vcs_packages():
             raise ExportError("Unable to export locks with VCS packages")
+
         content: Dict[str, dict] = {
             "R": {
-            },
-            "Packages": {
             }
         }
 
@@ -40,6 +39,13 @@ class LockRenvExporter(BaseExporter):
 
         for entry in sorted(source_entries, key=lambda x: x.name):
             source = source_by_name(lock.sources, entry.source)
+            # If md5s are not found, we cannot continue
+
+            if entry.files[0].md5 is None:
+                raise ExportError(
+                    "The current roo lock file contains no md5 hashes"
+                )
+
             packages[entry.name] = {
                 "Package": entry.name,
                 "Version": entry.version,
@@ -49,6 +55,8 @@ class LockRenvExporter(BaseExporter):
                 # at the moment.
                 "Hash": entry.files[0].md5
             }
+        content["Packages"] = packages
+
         try:
             with atomicwrites.atomic_write(
                     path, overwrite=True, newline="", encoding="utf-8") as f:

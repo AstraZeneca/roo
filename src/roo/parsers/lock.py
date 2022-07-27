@@ -55,7 +55,7 @@ class PackageFile:
     name: str
     hash: str
     # Add md5 as well because damn renv is stuck in the 2000s
-    md5: str
+    md5: Optional[str] = None
 
     @classmethod
     def fromdict(cls, d: Dict[str, Any]) -> PackageFile:
