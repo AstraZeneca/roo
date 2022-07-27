@@ -54,6 +54,8 @@ class PackageFile:
     """Describes a specific package file"""
     name: str
     hash: str
+    # Add md5 as well because damn renv is stuck in the 2000s
+    md5: str
 
     @classmethod
     def fromdict(cls, d: Dict[str, Any]) -> PackageFile:
@@ -278,3 +280,7 @@ class Lock:
             entries.append(entry)
 
         return entries
+
+
+def source_by_name(srclist: List[Source], name: str):
+    return [src for src in srclist if src.name == name][0]
