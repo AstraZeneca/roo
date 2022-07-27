@@ -1,13 +1,11 @@
 import pathlib
 import logging
-from typing import List
-
 import atomicwrites
 import csv
 
 from ..exceptions import ExportError
 from .base_exporter import BaseExporter
-from ...parsers.lock import Lock, SourceLockEntry, Source
+from ...parsers.lock import Lock, SourceLockEntry, source_by_name
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +23,7 @@ class LockCSVExporter(BaseExporter):
                     if isinstance(entry, SourceLockEntry)
                 ]
                 for entry in sorted(source_entries, key=lambda x: x.name):
-                    source = _source_by_name(lock.sources, entry.source)
+                    source = source_by_name(lock.sources, entry.source)
                     for pkgfile in entry.files:
                         writer.writerow(
                             [entry.name,
@@ -37,7 +35,3 @@ class LockCSVExporter(BaseExporter):
         except Exception as e:
             logger.exception(f"Unable to export to csv: {e}")
             raise ExportError(f"{e}")
-
-
-def _source_by_name(srclist: List[Source], name: str):
-    return [src for src in srclist if src.name == name][0]

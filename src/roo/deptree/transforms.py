@@ -134,7 +134,8 @@ def deptree_to_lock_entries(root: RootDependency) -> List[LockEntry]:
                     files=[
                         PackageFile(
                             name=dependency.package.filename,
-                            hash=dependency.package.hash
+                            hash=dependency.package.hash,
+                            md5=dependency.package.md5
                         )
                     ],
                     dependencies=dependencies

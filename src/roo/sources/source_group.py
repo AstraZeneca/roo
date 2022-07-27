@@ -6,7 +6,6 @@ import logging
 from .source_package import SourcePackage
 from ..semver import VersionConstraint, Version
 from .exceptions import PackageNotFoundError
-from .source_abc import SourceABC
 from .remote_source import RemoteSource
 
 if TYPE_CHECKING:
@@ -23,9 +22,9 @@ class SourceGroup:
     """
 
     def __init__(self):
-        self.sources: OrderedDict[str, SourceABC] = OrderedDict()
+        self.sources: OrderedDict[str, RemoteSource] = OrderedDict()
 
-    def add_source(self, source: SourceABC):
+    def add_source(self, source: RemoteSource):
         """
         Adds a source to the group
         """
@@ -34,12 +33,12 @@ class SourceGroup:
 
         self.sources[source.name] = source
 
-    def source_by_name(self, name: str) -> SourceABC:
+    def source_by_name(self, name: str) -> RemoteSource:
         """Return the source if found. Otherwise raises KeyError"""
         return self.sources[name]
 
     @property
-    def all_sources(self) -> List[SourceABC]:
+    def all_sources(self) -> List[RemoteSource]:
         """
         Return a list of the available sources.
         """
@@ -108,12 +107,12 @@ class SourceGroup:
         # We tried all priorities and found nothing.
         raise PackageNotFoundError(f"{name} {constraint}")
 
-    def _sources_by_priority(self) -> List[List[SourceABC]]:
+    def _sources_by_priority(self) -> List[List[RemoteSource]]:
         """Returns the sources grouped together by priority, as a list
         of lists. Groups are ordered from the lowest to the highest priority.
         inside each group, they preserve the order of addition.
         """
-        d: Dict[int, List[SourceABC]] = {}
+        d: Dict[int, List[RemoteSource]] = {}
         for source in self.all_sources:
             sources_for_priority = d.setdefault(source.priority, [])
             sources_for_priority.append(source)
