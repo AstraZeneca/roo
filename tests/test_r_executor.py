@@ -73,3 +73,12 @@ def test_rscript_path(tmpdir, fixture_file):
     env.init()
     executor = RBoundExecutor(env)
     assert "Rscript" in executor.rscript_executable_path
+
+
+def test_version(tmpdir, fixture_file):
+    env = Environment(base_dir=pathlib.Path(tmpdir), name="hello")
+    env.init()
+    executor = RBoundExecutor(env)
+
+    assert "version" in executor.version_info
+    assert "platform" in executor.version_info
