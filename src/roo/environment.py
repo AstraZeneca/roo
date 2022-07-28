@@ -130,6 +130,7 @@ class Environment:
         """Initializes the environment
 
         Args:
+            r_version: the version of R to use to create the env
             r_executable_path: if specified, which R to use to create the env.
                                if not specified, one will be found.
             overwrite: If true, overwrite a pre-existing environment,
