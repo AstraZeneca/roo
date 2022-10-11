@@ -354,7 +354,8 @@ def is_core_dependency(dependency_name: str) -> bool:
     return dependency_name in (
         "R", "stats", "utils", "graphics", "grDevices",
         "methods", "tools", "parallel", "splines", "grid",
-        "compiler", "datasets", "stats4", "tcltk", "translations"
+        "compiler", "datasets", "stats4", "tcltk", "translations",
+        "base"
     )
 
 
