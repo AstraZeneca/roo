@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.2
+
+- PR #64 Added base as core dependency
+
 ## 0.13.1
 
 - PR #56 Ensure that discovery of R versions on linux is done invoking the command, rather than Rcmd
