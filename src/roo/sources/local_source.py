@@ -34,6 +34,10 @@ class LocalSource(SourceABC):
     def contrib_path(self) -> pathlib.Path:
         return pathlib.Path(self.url) / "src" / "contrib"
 
+    @property
+    def location(self) -> str:
+        return str(self.url)
+
     def find_package(self, name: str, version: str) -> SourcePackage:
         """
         Finds a package by name and version

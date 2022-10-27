@@ -26,4 +26,7 @@ def _create_theme():
         "package": "turquoise4",
         "version": "yellow",
         "environment": "purple",
+        "source": "orange1",
+        "active": "bold green",
+        "repr.url": "none"
     })

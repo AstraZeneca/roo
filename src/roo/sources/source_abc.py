@@ -9,11 +9,16 @@ from .source_package import SourcePackage
 class SourceABC(ABC):
     """Abstract base class of a source of packages"""
 
-    def __init__(self, name, url, priority):
+    def __init__(self, name: str, url: str, priority: int):
         self.name = name
         self.url = url
         self.priority = priority
         self._cache = SourceCache(self.url)
+
+    @property
+    @abstractmethod
+    def location(self) -> str:
+        """Returns the location of the source, as a generic uri string"""
 
     @abstractmethod
     def find_package(self,
