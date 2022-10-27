@@ -11,6 +11,7 @@ from roo.cli.install import install
 from roo.cli.lock import lock
 from roo.cli.package import package
 from roo.cli.rswitch import rswitch
+from roo.cli.run import run
 from roo.console import init_console
 
 logger = logging.getLogger(__file__)
@@ -35,3 +36,4 @@ main.add_command(cache)
 main.add_command(export)
 main.add_command(add)
 main.add_command(rswitch)
+main.add_command(run)

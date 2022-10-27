@@ -5,7 +5,7 @@ import subprocess
 import logging
 import typing
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from .environment import Environment
@@ -72,6 +72,20 @@ class RExecutorBase:
             raise ExecutorError(
                 f"Unable to remove package {package_name}. "
                 f"Execution of command failed.")
+
+    def run(self, params: Optional[list]):
+        if params is None:
+            params = []
+
+        command = []
+        command.extend(params)
+
+        try:
+            self._run_r(command)
+        except subprocess.CalledProcessError as e:
+            raise ExecutorError(
+                f"Unable to run {command}: {e}"
+            )
 
     @property
     def version_info(self) -> typing.Dict[str, str]:
