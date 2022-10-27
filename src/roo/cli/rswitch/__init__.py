@@ -66,7 +66,7 @@ def rswitch(version):
             "[/error]"
         )
         console().print(
-            f"[error]"
+            "[error]"
             "Note: your R installation may now not work anymore and the link "
             "have to be restored manually.[/error]"
         )
