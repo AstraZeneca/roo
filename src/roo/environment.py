@@ -262,20 +262,20 @@ class Environment:
                     'platform: ', config$r_platform, ')'
                 )
             )
-            if (config$r_platform != R.version$platform) {{
-                stop(
-                    paste(
-                        "Cannot use environment with current R platform",
-                        R.version$platform
-                    )
-                )
-            }}
             current_r_version <- paste0(R.version$major, ".", R.version$minor)
             if (config$r_version != current_r_version) {{
                 stop(
                     paste(
                         "Cannot use environment with current R version",
                         current_r_version
+                    )
+                )
+            }}
+            if (config$r_platform != R.version$platform) {{
+                stop(
+                    paste(
+                        "Cannot use environment with current R platform",
+                        R.version$platform
                     )
                 )
             }}
