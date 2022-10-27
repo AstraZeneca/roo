@@ -5,8 +5,7 @@ from roo.console import console
 from roo.r_executor import ExecutorError
 
 from roo.environment import Environment, available_environments, \
-    UnexistentEnvironment, enabled_environment
-
+    UnexistentEnvironment, enabled_environment, find_all_installed_r_homes
 
 logger = logging.getLogger(__file__)
 
@@ -28,16 +27,20 @@ def environment():
 @click.option("--overwrite",
               help="Overwrites the environment if already present.",
               is_flag=True, default=False)
+@click.option("--r-version",
+              help="The version of R to use among the available ones. "
+                   "If not specified, uses the highest.",
+              type=click.STRING, default=None)
 @click.option("--r-executable-path",
               help="The path to the R executable to use.",
               type=click.Path(), default=None)
 @click.argument("name", type=click.STRING, default="default")
-def environment_init(base_dir, overwrite, r_executable_path, name):
+def environment_init(base_dir, overwrite, r_version, r_executable_path, name):
     base_dir = pathlib.Path(base_dir)
 
     try:
         env = Environment(base_dir=base_dir, name=name)
-        env.init(r_executable_path, overwrite)
+        env.init(r_version, r_executable_path, overwrite)
     except Exception as e:
         logger.exception("Unable to initialise environment")
         raise click.ClickException(f"Unable to initialise environment: {e}")
@@ -70,8 +73,7 @@ def environment_list(base_dir):
                 f"([version]{r_version}[/version])"
             )
         else:
-            console().print(f"{env.name} ([version]{r_version}[/version])",
-                            indent=2)
+            console().print(f"{env.name} ([version]{r_version}[/version])")
 
 
 @environment.command(
@@ -134,3 +136,17 @@ def environment_remove(base_dir, name):
     except Exception as e:
         logger.exception("Unable to initialise environment")
         raise click.ClickException(f"Unable to remove environment: {e}")
+
+
+@environment.command(name="options",
+                     help=(
+                         "Show all found R executables that can be assigned "
+                         "to an environment."
+                     ))
+def environment_options():
+    all_r_homes = find_all_installed_r_homes()
+    for entry in all_r_homes:
+        console().print(
+            ("* " if entry["active"] else "  ") +
+            f"[version]{entry['version']}[/version] {entry['home_path']}"
+        )

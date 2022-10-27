@@ -1,10 +1,11 @@
 import re
 from xml.etree import ElementTree
 import textwrap
-from typing import Union, List, Dict, cast
+from typing import Union, List, Dict, cast, Optional
 import logging
 import pathlib
 import shutil
+import subprocess
 import platform
 import toml
 from .files.rprofile import RProfile
@@ -123,16 +124,23 @@ class Environment:
         shutil.rmtree(self.env_dir)
 
     def init(self,
-             r_executable_path: Union[pathlib.Path, None] = None,
+             r_version: Optional[str] = None,
+             r_executable_path: Optional[pathlib.Path] = None,
              overwrite: bool = False) -> None:
         """Initializes the environment
 
         Args:
+            r_version: the version of R to use to create the env
             r_executable_path: if specified, which R to use to create the env.
                                if not specified, one will be found.
             overwrite: If true, overwrite a pre-existing environment,
                        otherwise raise an error.
         """
+
+        if r_version is not None and r_executable_path is not None:
+            raise ValueError(
+                "Cannot specify both R version and R executable path"
+            )
 
         if self.exists():
             if not overwrite:
@@ -142,7 +150,7 @@ class Environment:
             self.remove()
 
         if r_executable_path is None:
-            r_executable_path = _find_r_executable_path()
+            r_executable_path = _find_r_executable_path(r_version)
 
         if not r_executable_path.is_file():
             raise FileNotFoundError(
@@ -328,7 +336,7 @@ def enabled_environment(base_dir: pathlib.Path) -> Union[Environment, None]:
     return None
 
 
-def _find_r_executable_path() -> pathlib.Path:
+def _find_r_executable_path(r_version: Optional[str] = None) -> pathlib.Path:
     """
     Finds the R installation available on the machine.
     """
@@ -337,8 +345,15 @@ def _find_r_executable_path() -> pathlib.Path:
     # and pick the highest active version. If nothing else works, we just
     # use whatever which R returns.
 
-    active = _find_highest_active_version()
+    if r_version is not None:
+        active = _find_active_r_version(r_version)
+        if active is None:
+            raise FileNotFoundError(
+                f"Unable to find active R executable for version {r_version}"
+            )
+        return cast(pathlib.Path, active["executable_path"])
 
+    active = _find_highest_active_version()
     if active is not None:
         return cast(pathlib.Path, active["executable_path"])
 
@@ -358,10 +373,13 @@ def _find_r_executable_path() -> pathlib.Path:
 
 _BASE_WINDOWS_R_INSTALL_PATH = pathlib.Path(r"C:\Program Files\R")
 _BASE_MACOS_R_INSTALL_PATH = pathlib.Path("/Library/Frameworks/R.framework/")
-_BASE_LINUX_R_INSTALL_PATH = pathlib.Path("/usr/lib/R/")
+_BASE_LINUX_R_INSTALL_PATH_LIST = [
+    pathlib.Path("/usr/lib/R/"),
+    pathlib.Path("/usr/local/")
+]
 
 
-def _find_all_installed_r_homes() -> List[Dict]:
+def find_all_installed_r_homes() -> List[Dict]:
     """Finds all available installed R homes.
     The order is arbitrary and depends on filesystem ordering.
     Priority must be decided outside.
@@ -406,17 +424,40 @@ def _find_all_installed_r_homes() -> List[Dict]:
         except (FileNotFoundError, KeyError):
             pass
     elif plat == "Linux":
+        # First, try with the base paths
+        for base_path in _BASE_LINUX_R_INSTALL_PATH_LIST:
+            try:
+                version = _get_r_version(base_path / "bin" / "R")
+                installed_r.append({
+                    "home_path": base_path,
+                    "executable_path": base_path / "bin" / "R",
+                    "version": version,
+                    "active": True,
+                })
+            except (FileNotFoundError,
+                    subprocess.CalledProcessError,
+                    KeyError):
+                logger.exception("Failed option")
+
+        # also try under opt, one version per subdir, which is how github
+        # seem to do it. We really need to make this whole detection
+        # thing configurable
         try:
-            version = _get_rcmd_version(
-                _BASE_LINUX_R_INSTALL_PATH / "bin" / "Rcmd")
-            installed_r.append({
-                "home_path": _BASE_LINUX_R_INSTALL_PATH,
-                "executable_path": _BASE_LINUX_R_INSTALL_PATH / "bin" / "R",
-                "version": version,
-                "active": True,
-            })
-        except (FileNotFoundError, KeyError):
-            pass
+            base_path = pathlib.Path("/opt/R/")
+            for entry in base_path.iterdir():
+                logger.info(f"Trying {entry.name}")
+                if re.match(r"\d+\.\d+\.\d+", str(entry.name)):
+                    version = _get_r_version(entry / "bin" / "R")
+                    installed_r.append({
+                        "home_path": entry,
+                        "executable_path": entry / "bin" / "R",
+                        "version": version,
+                        "active": True,
+                    })
+        except (FileNotFoundError,
+                subprocess.CalledProcessError,
+                KeyError):
+            logger.exception("Failed option")
 
     return installed_r
 
@@ -447,31 +488,48 @@ def _get_plist_version(path: pathlib.Path) -> str:
     raise KeyError("Invalid plist file")
 
 
-def _get_rcmd_version(path: pathlib.Path) -> str:
-    """Extract the current version from the only place it can be found
-    on linux: the Rcmd file"""
-    with open(path) as f:
-        for line in f:
-            if line.startswith("R_VERSION"):
-                m = re.match(r"R_VERSION\s*=\s*(\d\.\d\.\d)", line)
-                if m is not None:
-                    version = m.group(1)
-                    return version
+def _get_r_version(path: pathlib.Path) -> str:
+    """Extract the current version from the run of the R executable"""
 
-    raise KeyError("Invalid plist file")
+    output = subprocess.check_output([path, "--version"], encoding="utf-8")
+
+    m = re.match(r"R version\s*(\d\.\d\.\d)", output)
+    if m is None:
+        raise KeyError("Unable to find version in R output")
+
+    version = m.group(1)
+    return version
 
 
-def _find_highest_active_version() -> Union[Dict, None]:
+def _find_highest_active_version() -> Optional[Dict]:
 
     active_homes = filter(lambda x: x["active"] is True,
-                          _find_all_installed_r_homes())
+                          find_all_installed_r_homes())
 
     try:
         highest_version = sorted(
             active_homes,
-            key=lambda x: [int(i) for i in x["version"].split(".")],
+            key=lambda x: [int(i) for i in x["version"].split(".")] +
+                          [x["executable_path"]],
             reverse=True
         )[0]
         return highest_version
-    except KeyError:
+    except IndexError:
+        return None
+
+
+def _find_active_r_version(r_version: str) -> Optional[Dict]:
+    active_homes = filter(
+        lambda x: x["active"] is True and x["version"] == r_version,
+        find_all_installed_r_homes()
+    )
+
+    try:
+        active_version = sorted(
+            active_homes,
+            key=lambda x: x["executable_path"],
+            reverse=True
+        )[0]
+        return active_version
+    except IndexError:
         return None

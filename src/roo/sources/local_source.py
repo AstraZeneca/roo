@@ -1,13 +1,9 @@
 import logging
 import pathlib
-import tempfile
-from typing import Union, List, Dict, Optional, Any, cast
-from urllib.parse import urljoin
+from typing import List, Dict
 
 from ..parsers.description import Description
-from bs4 import BeautifulSoup
 
-from ..network import session_with_proxy
 from .source_package import SourcePackage
 from .exceptions import PackageNotFoundError
 from .source_abc import SourceABC
@@ -15,36 +11,28 @@ from .source_abc import SourceABC
 logger = logging.getLogger(__file__)
 
 
-class RemoteSource(SourceABC):
-    """Provides access to a remote source, such as CRAN or CRAN-like.
-    Supports both CRAN and Artifactory layouts transparently.
+class LocalSource(SourceABC):
+    """Provides access to a local source, that is, a layout such as CRAN
+    on a local disk.
     """
 
-    def __init__(self, name: str, url: str,
-                 proxy: Optional[Union[str, bool]] = None,
-                 priority: int = 0):
-        super().__init__(name, url, priority)
-        self.proxy = proxy
-        self._session = session_with_proxy(self.proxy)
+    def __init__(self, name: str, path: pathlib.Path, priority: int = 0):
+        super().__init__(name, str(path), priority)
 
         # Instead of parsing the HTML file every time, we download
         # everything once and store it here, parsed. The key '' is the contrib
         # list. The key with a given package name is the subdir in the archive
         # associated to that.
-        self._index_cache: Dict[str, List[SourcePackage]] = {}
         self._packages: Dict[str, List[SourcePackage]] = {}
+        self._index_cache: Dict[str, List[SourcePackage]] = {}
 
     @property
-    def location(self) -> str:
-        return self.url
+    def archive_path(self) -> pathlib.Path:
+        return self.contrib_path / "Archive"
 
     @property
-    def archive_url(self) -> str:
-        return urljoin(self.contrib_url, "Archive/")
-
-    @property
-    def contrib_url(self) -> str:
-        return urljoin(self.url, "src/contrib/")
+    def contrib_path(self) -> pathlib.Path:
+        return pathlib.Path(self.url) / "src" / "contrib"
 
     def find_package(self, name: str, version: str) -> SourcePackage:
         """
@@ -68,7 +56,8 @@ class RemoteSource(SourceABC):
 
     def find_package_versions(self, name: str) -> List[SourcePackage]:
         """
-        Finds all available versions of a package
+        Finds all available versions of a package. Note that packages
+        are returned in arbitrary order.
 
         Args:
             name: the name of the package
@@ -88,27 +77,9 @@ class RemoteSource(SourceABC):
 
     def retrieve_package_to_cache(self, package: SourcePackage):
         """
-        Downloads a package from the source and stores it in the cache.
-        This method is called by Package to download itself.
-        It always performs download, even if the package is already in
-        cache.
-
-        package will be modified after this operation has taken place.
-
-        Args:
-            package: the package to download.
-
         """
-        logger.info(f"Downloading package {package.url}")
-        res = self._session.get(package.url)
-        res.raise_for_status()
-        with tempfile.TemporaryDirectory() as tmp:
-            tmppath = pathlib.Path(tmp) / package.filename
-            with open(tmppath, "wb") as f:
-                f.write(res.content)
-
-            pkg_file_path = self._cache.add_package_file(
-                package.name, package.version, tmppath)
+        pkg_file_path = self._cache.add_package_file(
+            package.name, package.version, pathlib.Path(package.url))
 
         package.local_path = pkg_file_path
         description_file = self._cache.get_package_description_file(
@@ -123,25 +94,25 @@ class RemoteSource(SourceABC):
         Returns: the list of packages
 
         """
+        # blank entry is reserved for active packages.
         packages = self._index_cache.get('')
         if packages is not None:
             return packages
 
-        logger.info("Downloading contrib url from source %s", self.url)
-        res = self._session.get(self.contrib_url)
-        res.raise_for_status()
-
-        index_content = res.text
-
-        data = BeautifulSoup(index_content, features="html.parser")
-
         packages = []
-        for entry in data.find_all("a"):
-            if _is_package_entry(entry):
+
+        if not self.contrib_path.exists():
+            return packages
+
+        for entry in self.contrib_path.iterdir():
+            if entry == "PACKAGES.gz":
+                continue
+
+            elif entry.suffix.endswith("gz"):
                 pkg = SourcePackage(
-                    filename=entry["href"],
+                    filename=str(entry.name),
                     active=True,
-                    url=urljoin(self.contrib_url, entry["href"]),
+                    url=str(self.contrib_path / entry),
                     source=self
                 )
                 if self._cache.has_package_file(pkg.name, pkg.version):
@@ -154,7 +125,6 @@ class RemoteSource(SourceABC):
                 packages.append(pkg)
 
         self._index_cache[''] = packages
-
         return packages
 
     def _archived_packages(self, package_name: str) -> list:
@@ -172,7 +142,7 @@ class RemoteSource(SourceABC):
         if cached_packages is not None:
             return cached_packages
 
-        subdir_url = urljoin(self.archive_url, package_name+'/')
+        package_subdir = self.archive_path / package_name
 
         # Here the parsing needs to consider two cases for the archive:
         #
@@ -189,18 +159,17 @@ class RemoteSource(SourceABC):
         # use a dict so we can keep track of the names and skip if we find dups
         packages = {}
 
-        pkgfiles, dirs = _get_pkgfiles_and_dirs_at_url(self._session,
-                                                       subdir_url)
+        pkgfiles, dirs = _get_pkgfiles_and_dirs_at_path(package_subdir)
 
         # This gets the CRAN format
-        for filename in pkgfiles:
-            if filename in packages:
+        for filepath in pkgfiles:
+            if filepath.name in packages:
                 continue
 
             pkg = SourcePackage(
-                filename=filename,
+                filename=filepath.name,
                 active=False,
-                url=urljoin(subdir_url, filename),
+                url=str(filepath),
                 source=self
             )
             if self._cache.has_package_file(pkg.name, pkg.version):
@@ -210,25 +179,24 @@ class RemoteSource(SourceABC):
                 description_file = self._cache.get_package_description_file(
                     pkg.name, pkg.version)
                 pkg.description = Description.parse(description_file)
-            packages[filename] = pkg
+            packages[filepath.name] = pkg
 
         # This gets the Artifactory format
         for dir_ in dirs:
             # all these directories are in principle versions.
             # We do not recurse deeper because we don't want to start long
             # running fetching, and there's no need for it.
-            versioned_subdir_url = urljoin(subdir_url, dir_)
-            pkgfiles, _ = _get_pkgfiles_and_dirs_at_url(
-                self._session, versioned_subdir_url)
+            versioned_subdir = package_subdir / dir_
+            pkgfiles, _ = _get_pkgfiles_and_dirs_at_path(versioned_subdir)
 
-            for filename in pkgfiles:
-                if filename in packages:
+            for filepath in pkgfiles:
+                if filepath.name in packages:
                     continue
 
                 pkg = SourcePackage(
-                    filename=filename,
+                    filename=filepath.name,
                     active=False,
-                    url=urljoin(versioned_subdir_url, filename),
+                    url=str(filepath),
                     source=self
                 )
                 if self._cache.has_package_file(pkg.name, pkg.version):
@@ -238,46 +206,28 @@ class RemoteSource(SourceABC):
                     desc_file = self._cache.get_package_description_file(
                         pkg.name, pkg.version)
                     pkg.description = Description.parse(desc_file)
-                packages[filename] = pkg
+                packages[filepath.name] = pkg
 
         self._index_cache[package_name] = list(packages.values())
         return self._index_cache[package_name]
 
 
-def _is_package_entry(entry: Any) -> bool:
-    """Returns True if the html entry describes a package."""
-    href = entry["href"]
-    return cast(bool, (
-        href.endswith("gz")
-        and href == entry.string
-        and href != "PACKAGES.gz"
-    ))
-
-
-def _is_dir_entry(entry: Any) -> bool:
-    """Returns true if the html entry refers to a directory."""
-    href = entry["href"]
-    return cast(bool, (href.endswith("/") and href == entry.string))
-
-
-def _get_pkgfiles_and_dirs_at_url(session: Any, url: str) -> tuple:
+def _get_pkgfiles_and_dirs_at_path(path: pathlib.Path) -> tuple:
     """Utility function to get the tar.gz files and the directories
     at a given URL.
     """
-    res = session.get(url)
-    if res.status_code == 404:
-        return [], []
-    res.raise_for_status()
-    index_content = res.text
+    packages: List[pathlib.Path] = []
+    dirs: List[pathlib.Path] = []
 
-    data = BeautifulSoup(index_content, features="html.parser")
+    if not path.exists():
+        return packages, dirs
 
-    packages, dirs = [], []
-
-    for entry in data.find_all("a"):
-        if _is_package_entry(entry):
-            packages.append(entry["href"])
-        elif _is_dir_entry(entry):
-            dirs.append(entry["href"])
+    for entry in path.iterdir():
+        if entry.name == "PACKAGES.gz":
+            continue
+        elif entry.suffix.endswith("gz"):
+            packages.append(entry)
+        elif entry.is_dir():
+            dirs.append(entry)
 
     return packages, dirs

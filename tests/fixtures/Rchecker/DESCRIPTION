@@ -4,7 +4,7 @@ Date: 2014-7-10
 Title: This package is a mock package for our installation tests
 Author: Stefano Borini
 Maintainer: Stefano Borini <stefano.borini@astrazeneca.com>
-Depends: R
+Depends: R (>= 3.6)
 Description: Whatever
 License: GPL (>= 3)
 Packaged: 2014-07-11 15:09:21 UTC; mblum

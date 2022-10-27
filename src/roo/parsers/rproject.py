@@ -48,12 +48,18 @@ class Source:
     url: str
     proxy: Optional[Union[str, bool]] = None
 
+    # If True, the source will contain packages that will squash
+    # packages from any other source, but only for those packages
+    # that exist on this source.
+    priority: int = 0
+
     @classmethod
-    def fromdict(cls, d: Dict[str, str]) -> Source:
+    def fromdict(cls, d: Dict[str, Any]) -> Source:
         return cls(
             name=d["name"],
             url=d["url"],
-            proxy=d.get("proxy")
+            proxy=d.get("proxy"),
+            priority=d.get("priority", 0)
         )
 
 

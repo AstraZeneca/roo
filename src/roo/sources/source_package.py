@@ -5,7 +5,7 @@ from typing import List, Optional, TYPE_CHECKING, cast
 
 from roo.sources.package_abc import PackageABC
 
-from ..hashing import sha256path
+from ..hashing import sha256path, md5path
 from ..parsers.description import Description
 
 if TYPE_CHECKING:
@@ -28,7 +28,8 @@ class SourcePackage(PackageABC):
         Args:
             filename: the filename of the package
             active: if it's the currently active one or is in Archive.
-            url: the url of the tar.gz
+            url: the url of the tar.gz. This can be both a remote url,
+                 or a local path (no need for file://)
             source: a backlink to the source this package comes from
         """
 
@@ -36,6 +37,9 @@ class SourcePackage(PackageABC):
         self.active = active
         self.url = url
         self.source = source
+
+        # This is the path in the cache, if the package is present in the
+        # cache. Normally set from the source.
         self.local_path: Optional[pathlib.Path] = None
         self.description: Optional[Description] = None
         self.expected_hash = expected_hash
@@ -48,10 +52,10 @@ class SourcePackage(PackageABC):
         self._dependencies = None
 
         try:
-            name, version = self._versioned_name.split("_")
+            self._versioned_name.split("_")
         except ValueError:
             raise ValueError(f"versioned name {self._versioned_name} cannot "
-                             f"be split in name and version.")
+                             f"be split in name and version.") from None
 
     @property
     def versioned_name(self) -> str:
@@ -80,6 +84,12 @@ class SourcePackage(PackageABC):
         return "sha256:"+sha256path(cast(str, self.local_path))
 
     @property
+    def md5(self) -> str:
+        """Returns the md5 for renv consumption"""
+        self.ensure_local()
+        return md5path(cast(pathlib.Path, self.local_path))
+
+    @property
     def dependencies(self) -> List[Dependency]:
         """Returns the list of dependencies the package has.
         If the file is not locally downloaded, this call will download
@@ -96,19 +106,21 @@ class SourcePackage(PackageABC):
         """Returns true if the package has a local file"""
         return self.local_path is not None
 
-    def download(self):
-        """Convenience method to trigger the download of a package.
-        This happens regardless if the package is already in cache."""
-        self.source.download_package(self)
+    def retrieve(self) -> None:
+        """Convenience method to trigger the retrieval of a package
+        from its source to the cache.
+        This method performs the retrieval regardless if the package is
+        already in cache."""
+        self.source.retrieve_package_to_cache(self)
 
-    def ensure_local(self):
-        """Ensures that the package has been downloaded locally. If
+    def ensure_local(self) -> None:
+        """Ensures that the package has been retrieved locally to cache. If
         it is already present, this function does nothing, otherwise
         it downloads it."""
         if self.has_local_file():
             return
 
-        self.download()
+        self.retrieve()
 
     def hash_match(self):
         """
