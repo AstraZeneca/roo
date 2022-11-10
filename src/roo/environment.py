@@ -260,8 +260,8 @@ class Environment:
                 config$r_version != current_r_version) {{
                 stop(
                     paste0(
-                        "Cannot use environment {self.name}. ",
-                        "Currently executing R ",
+                        "Cannot use environment '{self.name}': ",
+                        "currently running R ",
                         current_r_version, " ", R.version$platform,
                         ", but environment is built for R ",
                         config$r_version, " ", config$r_platform
