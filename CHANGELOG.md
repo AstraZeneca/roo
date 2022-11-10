@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.14.0
+
+- #70 Improved error message in case of incorrect environment
+- #69 Ensure that the conservative flag is taken from the old lock if not s…
+- #68 Improved roo package search ui visual style
+- #67 Added run command
+- #66 Add Switch command to change R version on mac
+
 ## 0.13.2
 
 - PR #64 Added base as core dependency
