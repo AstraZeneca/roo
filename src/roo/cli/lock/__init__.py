@@ -1,6 +1,7 @@
 import logging
 import os
 import pathlib
+from typing import Optional
 
 import click
 from roo.console import console
@@ -29,8 +30,14 @@ def lock(quiet, overwrite, conservative):
     _ensure_lock(overwrite, conservative)
 
 
-def _ensure_lock(overwrite, conservative) -> Lock:
-    """Ensure that a lock file is present and sync"""
+def _ensure_lock(overwrite: bool, conservative: Optional[bool]) -> Lock:
+    """
+    Ensure that a lock file is present and sync.
+
+    If the conservative flag is None, it means that whatever is in the
+    old lock should be honored. If there's no old lock, it's equivalent to
+    False. This is to prevent re-locking during install.
+    """
     try:
         rproject = RProject.parse(pathlib.Path(".") / "rproject.toml")
     except IOError:
@@ -45,7 +52,7 @@ def _ensure_lock(overwrite, conservative) -> Lock:
         except FileNotFoundError:
             pass
 
-    old_lock = Lock()
+    old_lock = None
     try:
         old_lock = Lock.parse(lock_path)
     except FileNotFoundError:
@@ -55,6 +62,12 @@ def _ensure_lock(overwrite, conservative) -> Lock:
         console().print(
             f"[error]Existing Lockfile could not be parsed: {e}.[/error]")
         raise click.ClickException(f"Unable to parse current lock file: {e}")
+
+    if old_lock is None:
+        old_lock = Lock()
+
+    if conservative is None:
+        conservative = old_lock.metadata.conservative
 
     locker = Locker()
     try:
