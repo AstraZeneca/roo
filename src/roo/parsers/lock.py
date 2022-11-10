@@ -54,6 +54,8 @@ class PackageFile:
     """Describes a specific package file"""
     name: str
     hash: str
+    # Add md5 as well because damn renv is stuck in the 2000s
+    md5: Optional[str] = None
 
     @classmethod
     def fromdict(cls, d: Dict[str, Any]) -> PackageFile:
@@ -97,9 +99,14 @@ class SourceLockEntry(LockEntry):
     source: str
     # The files description
     files: List[PackageFile]
+    # The constraint on the R version
+    r_constraint: str
 
     @classmethod
     def fromdict(cls, d: Dict[str, Any]) -> SourceLockEntry:
+        if "r_constraint" not in d:
+            d["r_constraint"] = "*"
+
         self = cls(**d)
         self.files = [PackageFile.fromdict(x) for x in d["files"]]
         return self
@@ -273,3 +280,7 @@ class Lock:
             entries.append(entry)
 
         return entries
+
+
+def source_by_name(srclist: List[Source], name: str):
+    return [src for src in srclist if src.name == name][0]

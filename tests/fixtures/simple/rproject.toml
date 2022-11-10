@@ -6,6 +6,7 @@ url = "https://cloud.r-project.org/"
 
 [[tool.roo.source]]
 name = "QS"
+priority = 1
 url = "https://cran.ma.imperial.ac.uk/"
 
 [tool.roo.dependencies]

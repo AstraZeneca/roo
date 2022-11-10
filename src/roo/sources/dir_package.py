@@ -1,10 +1,12 @@
 import pathlib
 from typing import List
 
+from roo.sources.package_abc import PackageABC
+
 from ..parsers.description import Description, Dependency
 
 
-class DirPackage:
+class DirPackage(PackageABC):
     """Represents a package in a local directory"""
 
     def __init__(self, dir_path: pathlib.Path):
@@ -39,3 +41,7 @@ class DirPackage:
     def dependencies(self) -> List[Dependency]:
         """Returns the list of description dependencies the package has."""
         return self.description.dependencies
+
+    @property
+    def r_constraint(self) -> List[str]:
+        return self.description.r_constraint

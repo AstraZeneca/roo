@@ -4,7 +4,6 @@ from roo.deptree.dependencies import RootDependency, \
 from roo.semver import parse_constraint
 from roo.sources.remote_source import RemoteSource
 from roo.sources.source_group import SourceGroup
-from roo.user_notifier import NullNotifier
 
 
 def test_resolver(fixture_file):
@@ -15,7 +14,7 @@ def test_resolver(fixture_file):
             url="http://cloud.r-project.org/")
     )
 
-    resolver = Resolver(source_group, NullNotifier())
+    resolver = Resolver(source_group)
     root = RootDependency(
         dependencies=[
             UnresolvedConstrainedDependency(

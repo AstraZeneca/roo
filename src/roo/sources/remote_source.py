@@ -9,7 +9,6 @@ from bs4 import BeautifulSoup
 
 from ..network import session_with_proxy
 from .source_package import SourcePackage
-from ..caches.source_cache import SourceCache
 from .exceptions import PackageNotFoundError
 from .source_abc import SourceABC
 
@@ -22,11 +21,10 @@ class RemoteSource(SourceABC):
     """
 
     def __init__(self, name: str, url: str,
-                 proxy: Optional[Union[str, bool]] = None):
-        super().__init__(name)
-        self.url = url
+                 proxy: Optional[Union[str, bool]] = None,
+                 priority: int = 0):
+        super().__init__(name, url, priority)
         self.proxy = proxy
-        self._cache = SourceCache(self.url)
         self._session = session_with_proxy(self.proxy)
 
         # Instead of parsing the HTML file every time, we download
@@ -35,6 +33,10 @@ class RemoteSource(SourceABC):
         # associated to that.
         self._index_cache: Dict[str, List[SourcePackage]] = {}
         self._packages: Dict[str, List[SourcePackage]] = {}
+
+    @property
+    def location(self) -> str:
+        return self.url
 
     @property
     def archive_url(self) -> str:
@@ -84,9 +86,9 @@ class RemoteSource(SourceABC):
 
         return self._packages[name]
 
-    def download_package(self, package: SourcePackage):
+    def retrieve_package_to_cache(self, package: SourcePackage):
         """
-        Downloads a package from the source.
+        Downloads a package from the source and stores it in the cache.
         This method is called by Package to download itself.
         It always performs download, even if the package is already in
         cache.
@@ -279,14 +281,3 @@ def _get_pkgfiles_and_dirs_at_url(session: Any, url: str) -> tuple:
             dirs.append(entry["href"])
 
     return packages, dirs
-
-
-def _is_package_archive_dir(entry: Any) -> bool:
-    """Returns true if the entry refers to the package archive dir"""
-    href = entry["href"]
-    return cast(bool, (
-        href.endswith("/")
-        and href == entry.string
-        and entry.string.lower != "parent directory"
-        and '-' not in href
-    ))

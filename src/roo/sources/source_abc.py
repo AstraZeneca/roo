@@ -1,14 +1,24 @@
 from abc import ABC, abstractmethod
 from typing import List
 
+from roo.caches.source_cache import SourceCache
+
 from .source_package import SourcePackage
 
 
 class SourceABC(ABC):
     """Abstract base class of a source of packages"""
 
-    def __init__(self, name):
+    def __init__(self, name: str, url: str, priority: int):
         self.name = name
+        self.url = url
+        self.priority = priority
+        self._cache = SourceCache(self.url)
+
+    @property
+    @abstractmethod
+    def location(self) -> str:
+        """Returns the location of the source, as a generic uri string"""
 
     @abstractmethod
     def find_package(self,
@@ -41,16 +51,16 @@ class SourceABC(ABC):
         """
 
     @abstractmethod
-    def download_package(self, package: SourcePackage):
+    def retrieve_package_to_cache(self, package: SourcePackage):
         """
-        Downloads a package from the source.
+        Retrieve a package from the source.
         This method is called by Package to download itself.
-        It always performs download, even if the package is already in
+        It always performs retrieval, even if the package is already in
         cache.
 
         package will be modified after this operation has taken place.
 
         Args:
-            package: the package to download.
+            package: the package to retrieve.
 
         """

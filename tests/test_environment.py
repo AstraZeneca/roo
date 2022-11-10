@@ -1,9 +1,12 @@
 import pathlib
 import shutil
+from unittest import mock
 
 import pytest
 
-from roo.environment import Environment, ExistentEnvironment
+from roo.environment import Environment, ExistentEnvironment, \
+    find_all_installed_r_homes, _get_plist_version, \
+    _find_highest_active_version, _find_active_r_version
 from roo.files.rprofile import RProfile
 from roo.installer import Installer
 from roo.parsers.lock import Lock
@@ -111,3 +114,116 @@ def test_version_info(tmpdir):
     env.init()
     assert "version" in env.r_version_info
     assert "platform" in env.r_version_info
+
+
+def test_find_all_installed_r(fixture_file):
+    with mock.patch("platform.system") as mock_system, \
+            mock.patch("roo.environment._BASE_WINDOWS_R_INSTALL_PATH",
+                       pathlib.Path(fixture_file(
+                           "r_installation_paths", "windows"))
+                       ):
+        mock_system.return_value = "Windows"
+
+        installed = find_all_installed_r_homes()
+        for entry in [
+                {
+                    "home_path": fixture_file(
+                        "r_installation_paths", "windows", "R-3.6.3"),
+                    "executable_path": fixture_file(
+                        "r_installation_paths", "windows", "R-3.6.3", "bin",
+                        "R.exe"
+                    ),
+                    "version": "3.6.3",
+                    "active": True
+                },
+                {
+                    "home_path": fixture_file(
+                        "r_installation_paths", "windows", "R-3.6.0"),
+                    "executable_path": fixture_file(
+                        "r_installation_paths", "windows", "R-3.6.0", "bin",
+                        "R.exe"
+                    ),
+                    "version": "3.6.0",
+                    "active": True
+                }]:
+
+            assert entry in installed
+
+    with mock.patch("platform.system") as mock_system, \
+            mock.patch("roo.environment._BASE_MACOS_R_INSTALL_PATH",
+                       pathlib.Path(fixture_file(
+                           "r_installation_paths", "macos"))
+                       ):
+        mock_system.return_value = "Darwin"
+
+        installed = find_all_installed_r_homes()
+
+        for entry in [
+                {
+                    "home_path": fixture_file(
+                        "r_installation_paths", "macos", "Versions", "3.6"),
+                    "executable_path": fixture_file(
+                        "r_installation_paths", "macos", "Versions", "3.6",
+                        "Resources", "bin", "R"),
+                    "version": "3.6.0",
+                    "active": True
+                },
+                {
+                    "home_path": fixture_file(
+                        "r_installation_paths", "macos", "Versions", "4.1"),
+                    "executable_path": fixture_file(
+                        "r_installation_paths", "macos", "Versions", "4.1",
+                        "Resources", "bin", "R"),
+                    "version": "4.1.2",
+                    "active": False
+                }]:
+            assert entry in installed
+
+
+def test_get_plist_version(fixture_file):
+    version = _get_plist_version(fixture_file("Info.plist"))
+    assert version == "3.6.0"
+
+
+def test_find_highest_version(fixture_file):
+    with mock.patch("platform.system") as mock_system, \
+            mock.patch("roo.environment._BASE_WINDOWS_R_INSTALL_PATH",
+                       pathlib.Path(fixture_file(
+                           "r_installation_paths", "windows"))
+                       ):
+        mock_system.return_value = "Windows"
+
+        assert _find_highest_active_version() == {
+            "home_path": fixture_file(
+                "r_installation_paths", "windows", "R-3.6.3"
+            ),
+            "executable_path": fixture_file(
+                "r_installation_paths", "windows", "R-3.6.3", "bin",
+                "R.exe"
+            ),
+            "version": "3.6.3",
+            "active": True
+        }
+
+
+def test_find_active_r_version(fixture_file):
+    with mock.patch("platform.system") as mock_system, \
+            mock.patch("roo.environment._BASE_WINDOWS_R_INSTALL_PATH",
+                       pathlib.Path(fixture_file(
+                           "r_installation_paths", "windows"))
+                       ):
+        mock_system.return_value = "Windows"
+
+        assert _find_active_r_version("3.6.0") == {
+            "home_path": fixture_file(
+                "r_installation_paths", "windows", "R-3.6.0"
+            ),
+            "executable_path": fixture_file(
+                "r_installation_paths", "windows", "R-3.6.0", "bin",
+                "R.exe"
+            ),
+            "version": "3.6.0",
+            "active": True
+        }
+
+        assert _find_active_r_version("3.5.0") is None

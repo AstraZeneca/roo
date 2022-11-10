@@ -1,12 +1,11 @@
 import pathlib
 import logging
 import click
+from roo.console import console
 from roo.r_executor import ExecutorError
-from roo.user_notifier import UserNotifier
 
 from roo.environment import Environment, available_environments, \
-    UnexistentEnvironment, enabled_environment
-
+    UnexistentEnvironment, enabled_environment, find_all_installed_r_homes
 
 logger = logging.getLogger(__file__)
 
@@ -18,7 +17,7 @@ def environment():
 
 @environment.command(
     name="init",
-    help=("Initialises a new environment with a given name,"
+    help=("Initialises a new environment with a given name, "
           "or the name \"default\" if not specified.")
 )
 @click.option("--base-dir",
@@ -28,22 +27,26 @@ def environment():
 @click.option("--overwrite",
               help="Overwrites the environment if already present.",
               is_flag=True, default=False)
+@click.option("--r-version",
+              help="The version of R to use among the available ones. "
+                   "If not specified, uses the highest.",
+              type=click.STRING, default=None)
 @click.option("--r-executable-path",
-              help="The path to the R executable to use",
+              help="The path to the R executable to use.",
               type=click.Path(), default=None)
 @click.argument("name", type=click.STRING, default="default")
-def environment_init(base_dir, overwrite, r_executable_path, name):
+def environment_init(base_dir, overwrite, r_version, r_executable_path, name):
     base_dir = pathlib.Path(base_dir)
-    notifier = UserNotifier()
 
     try:
         env = Environment(base_dir=base_dir, name=name)
-        env.init(r_executable_path, overwrite)
+        env.init(r_version, r_executable_path, overwrite)
     except Exception as e:
         logger.exception("Unable to initialise environment")
         raise click.ClickException(f"Unable to initialise environment: {e}")
 
-    notifier.message(f"Initialised and enabled environment {name}")
+    console().print(f"Initialised and enabled environment "
+                    f"[environment]{name}[/environment]")
 
 
 @environment.command(
@@ -57,7 +60,6 @@ def environment_init(base_dir, overwrite, r_executable_path, name):
 def environment_list(base_dir):
     base_dir = pathlib.Path(base_dir)
     envs = available_environments(base_dir)
-    notifier = UserNotifier()
 
     for env in envs:
         try:
@@ -66,13 +68,12 @@ def environment_list(base_dir):
             r_version = "[error]broken R[/error]"
 
         if env.is_enabled():
-            notifier.message(
+            console().print(
                 f"* [environment]{env.name}[/environment] "
                 f"([version]{r_version}[/version])"
             )
         else:
-            notifier.message(f"{env.name} ([version]{r_version}[/version])",
-                             indent=2)
+            console().print(f"{env.name} ([version]{r_version}[/version])")
 
 
 @environment.command(
@@ -86,7 +87,6 @@ def environment_list(base_dir):
 @click.argument("name", type=click.STRING)
 def environment_enable(base_dir, name):
     base_dir = pathlib.Path(base_dir)
-    notifier = UserNotifier()
 
     env = Environment(base_dir=base_dir, name=name)
     try:
@@ -94,7 +94,7 @@ def environment_enable(base_dir, name):
     except UnexistentEnvironment:
         raise click.ClickException("Error: environment does not exist.")
 
-    notifier.message(
+    console().print(
         f"Environment [environment]{env.name}[/environment] enabled")
 
 
@@ -108,7 +108,6 @@ def environment_enable(base_dir, name):
               type=click.Path(), default=".")
 def environment_disable(base_dir):
     base_dir = pathlib.Path(base_dir)
-    notifier = UserNotifier()
 
     env = enabled_environment(base_dir)
     if env is None:
@@ -119,7 +118,7 @@ def environment_disable(base_dir):
     except UnexistentEnvironment:
         raise click.ClickException("Error: environment does not exist.")
 
-    notifier.message(
+    console().print(
         f"Environment [environment]{env.name}[/environment] disabled")
 
 
@@ -137,3 +136,17 @@ def environment_remove(base_dir, name):
     except Exception as e:
         logger.exception("Unable to initialise environment")
         raise click.ClickException(f"Unable to remove environment: {e}")
+
+
+@environment.command(name="options",
+                     help=(
+                         "Show all found R executables that can be assigned "
+                         "to an environment."
+                     ))
+def environment_options():
+    all_r_homes = find_all_installed_r_homes()
+    for entry in all_r_homes:
+        console().print(
+            ("* " if entry["active"] else "  ") +
+            f"[version]{entry['version']}[/version] {entry['home_path']}"
+        )

@@ -22,10 +22,11 @@ class Dependency:
 class Description:
     """Parses and exposes the data inside a DESCRIPTION file"""
 
-    def __init__(self, package: str, version: str,
+    def __init__(self, package: str, version: str, r_constraint: list,
                  dependencies: typing.List[Dependency]):
         self.package = package
         self.version = version
+        self.r_constraint = r_constraint
         self.dependencies = dependencies
 
     @classmethod
@@ -45,10 +46,18 @@ class Description:
             raise ParsingError(
                 f"Version unspecified in DESCRIPTION file {fileobj_or_path}")
 
+        r_constraint = []
         deps = {}
         for key in ("Depends", "Imports", "LinkingTo"):
             if key in data:
                 for name, constraint in split_deps_string(data[key]):
+
+                    # Special case. If the dependency is "R" it is a constraint
+                    # over the R version and it is treated separately.
+                    if name == "R":
+                        r_constraint = constraint
+                        continue
+
                     if name not in deps:
                         deps[name] = Dependency(name=name, constraint=[])
 
@@ -64,6 +73,7 @@ class Description:
         return cls(
             package=data["Package"],
             version=data["Version"],
+            r_constraint=r_constraint,
             dependencies=list(deps.values())
         )
 

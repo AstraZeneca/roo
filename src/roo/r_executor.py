@@ -1,11 +1,11 @@
 from __future__ import annotations
+import platform
 import pathlib
-import re
 import subprocess
 import logging
 import typing
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from .environment import Environment
@@ -73,6 +73,20 @@ class RExecutorBase:
                 f"Unable to remove package {package_name}. "
                 f"Execution of command failed.")
 
+    def run(self, params: Optional[list]):
+        if params is None:
+            params = []
+
+        command = []
+        command.extend(params)
+
+        try:
+            self._run_r(command)
+        except subprocess.CalledProcessError as e:
+            raise ExecutorError(
+                f"Unable to run {command}: {e}"
+            )
+
     @property
     def version_info(self) -> typing.Dict[str, str]:
         """
@@ -82,7 +96,11 @@ class RExecutorBase:
         - platform: the platform of the R executable
 
         """
-        command = [str(self.r_executable_path), "--version"]
+        command = [
+            str(self.rscript_executable_path),
+            "--vanilla",
+            "-e",
+            "R.version"]
 
         try:
             out = subprocess.check_output(
@@ -91,40 +109,42 @@ class RExecutorBase:
                 encoding="utf-8",
                 cwd=self._run_cwd()
             )
-        except subprocess.CalledProcessError:
+            rows = out.splitlines()
+            major = [x for x in rows if x.startswith("major")][0].split()[1]
+            minor = [x for x in rows if x.startswith("minor")][0].split()[1]
+            plat = [
+                x for x in rows if x.startswith("platform")][0].split()[1]
+            version = f"{major}.{minor}"
+        except (subprocess.CalledProcessError, KeyError, IndexError):
             raise ExecutorError(
-                "Unable to retrieve version info. "
-                "Check your R --version output"
+                f"Unable to retrieve version info. "
+                f"Check if R installation at {self.rscript_executable_path} "
+                f"is running correctly."
             )
 
-        m = re.search(r"R version\s(.+?)\s", out)
-        if m:
-            version = m.group(1).strip()
-        else:
-            raise ExecutorError(
-                "Unable to obtain version info. Check your R --version output")
+        return {"version": version, "platform": plat}
 
-        m = re.search(r"Platform:\s(.+?)\s", out)
-        if m:
-            platform = m.group(1).strip()
-        else:
-            raise ExecutorError(
-                "Unable to obtain platform info. "
-                "Check your R --version output"
-            )
-
-        if len(version) == 0 or len(platform) == 0:
-            raise ExecutorError(
-                "Empty version or platform info found. "
-                "Check your R --version output and "
-                "send it as a bug report."
-            )
-
-        return {"version": version, "platform": platform}
+    @property
+    def version(self) -> str:
+        return self.version_info["version"]
 
     @property
     def r_executable_path(self) -> pathlib.Path:
         raise NotImplementedError()
+
+    @property
+    def rscript_executable_path(self) -> pathlib.Path:
+        """
+        Returns the Rscript executable path.
+        We assume it's on the same directory of the R executable
+        """
+        plat = platform.system()
+        if plat == "Windows":
+            rscript_exe = "Rscript.exe"
+        else:
+            rscript_exe = "Rscript"
+
+        return self.r_executable_path.parent / rscript_exe
 
     def _remove_options(self):
         raise NotImplementedError()

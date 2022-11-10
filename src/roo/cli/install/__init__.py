@@ -4,10 +4,10 @@ import logging
 
 import click
 from roo.cli.lock import _ensure_lock
+from roo.console import console
 from roo.environment import enabled_environment, Environment
 from roo.installer import Installer, InstallationError
 from roo.parsers.rproject import RProject
-from roo.user_notifier import UserNotifier
 
 logger = logging.getLogger(__file__)
 
@@ -65,9 +65,7 @@ def install(env_base_dir: Union[str, pathlib.Path],
             serial: bool,
             use_vanilla: bool):
 
-    notifier = UserNotifier(quiet)
-
-    lock_file = _ensure_lock(False, notifier, False)
+    lock_file = _ensure_lock(False, False)
 
     env_base_dir = pathlib.Path(env_base_dir)
 
@@ -106,7 +104,6 @@ def install(env_base_dir: Union[str, pathlib.Path],
         categories = list(set(category))
 
     installer = Installer(
-        notifier,
         verbose_build=verbose_build,
         serial=serial,
         use_vanilla=use_vanilla)
@@ -117,5 +114,5 @@ def install(env_base_dir: Union[str, pathlib.Path],
             install_dep_categories=categories
         )
     except InstallationError as e:
-        notifier.error(f"Unable to perform installation: {e}")
+        console().print(f"[error]Unable to perform installation: {e}[/error]")
         raise click.ClickException(str(e))

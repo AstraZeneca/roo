@@ -1,22 +1,36 @@
+import string
+import random
 import tarfile
 import hashlib
 import shutil
 import pathlib
 import atomicwrites
 from urllib.parse import urlparse
-from typing import Union
+from typing import Union, Optional
 
 
 class SourceCache:
     """
-    Local cache for sources content.
-    Due to the nature of the CRAN sources not exposing an Etag, we cannot
-    store things with Cache-Control: no-cache, which is the majority of
-    index data. We can however cache the downloaded packages.
+    Local cache for source packages. These packages can be either
+    originate from downloaded sources, or from a local director.
+
+    Note: even for local packages, we always copy the package to the cache.
+    The reason is that the package may be on a network drive that may
+    become unavailable. Disk space is cheap nowadays anyway.
+    We could optimise local access by using a symbolic link, but we still
+    need to extract the DESCRIPTION file in the cache anyway.
     """
 
-    def __init__(self, source_url: str):
-        self.root_dir = pathlib.Path("~/.roo/cache").expanduser()
+    def __init__(self,
+                 source_url: str,
+                 root_dir: Optional[pathlib.Path] = None):
+        """Provide access to the cache section for a given source url
+        (if remote), or local path (if local). In any case, we take a string.
+        """
+        if root_dir is None:
+            root_dir = pathlib.Path("~/.roo/cache").expanduser()
+
+        self.root_dir = root_dir
         self.source_url = source_url
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
@@ -24,12 +38,16 @@ class SourceCache:
     @property
     def base_dir(self) -> pathlib.Path:
         """
-        Returns the base directory for the cache
+        Returns the base directory for the cache.
 
         Returns: The base directory for the cache of that source
         """
         url = urlparse(self.source_url)
-        return self.root_dir / "source" / url.netloc / \
+        if url.netloc == "":
+            source_location = pathlib.Path("local")
+        else:
+            source_location = pathlib.Path("remote") / url.netloc
+        return self.root_dir / "source" / source_location / \
             hashlib.sha256(url.path.encode("utf-8")).hexdigest()
 
     def package_dir(self, package_name: str) -> pathlib.Path:
@@ -121,9 +139,15 @@ class SourceCache:
                 if description is None:
                     raise ValueError("Unable to unpack DESCRIPTION file")
 
-                with atomicwrites.atomic_write(
-                        description_path, mode="wb") as f:
-                    f.write(description.read())
+                try:
+                    with atomicwrites.atomic_write(
+                            description_path, mode="wb") as f:
+                        f.write(description.read())
+                except FileExistsError:
+                    # If the file already exists at this point, it's
+                    # likely that a concurrent process created it as well,
+                    # so we just keep going.
+                    pass
         except FileNotFoundError:
             return None
 
@@ -156,17 +180,28 @@ class SourceCache:
             f"{package_name}_{package_version}.tar.gz"
         )
 
-        meta_dir = self.package_meta_dir(package_name, package_version)
-        description_path = meta_dir / "DESCRIPTION"
-        if pkg_path.exists() and description_path.exists():
+        if pkg_path.exists():
             return pkg_path
+
+        letters = string.ascii_lowercase
+        append = ''.join(random.choice(letters) for i in range(10))
 
         partial_pkg_path = (
             self.package_dir(package_name) /
-            f"{package_name}_{package_version}.part"
+            (f"{package_name}_{package_version}." + append)
         )
 
+        # first copy it locally so that we guarantee that atomic operations.
+        # are not compromised by different filesystems.
+        # If both processes do the copy it's not a problem because they
+        # have different append strings.
         shutil.copy(path, partial_pkg_path)
-        atomicwrites.move_atomic(str(partial_pkg_path), str(pkg_path))
+
+        # Then perform the atomic move. Only one will succeed, the other
+        # will get a FileExistError and we'll keep going.
+        try:
+            atomicwrites.move_atomic(str(partial_pkg_path), str(pkg_path))
+        except FileExistsError:
+            pass
 
         return pkg_path

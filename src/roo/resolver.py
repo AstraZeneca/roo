@@ -4,6 +4,9 @@ from collections import OrderedDict
 import logging
 from typing import List, cast, Optional, Union
 
+from roo.console import console
+from roo.sources.package_abc import PackageABC
+
 from .caches.vcs_store import VCSStore
 from .deptree.dependencies import (
     RootDependency, ResolvedDependency,
@@ -25,9 +28,19 @@ class CannotResolveError(Exception):
 
 
 class Resolver:
-    def __init__(self, source_group: SourceGroup, notifier):
+    def __init__(self, source_group: SourceGroup):
+        """The resolver class is what powers the resolution of the tree
+        step by step. We feed in a root dependency with the unresolved
+        dependencies from the rproject file, and (hopefully) retrieve
+        all the tree of resolved dependencies.
+
+        Note that, however, at this stage we don't have any connection
+        to a given environment, so one dependency is left unresolved:
+        the R version. It will be checked instead at install time.
+        In the tree, it's handled as a special dependency, but in the
+        lock file it's going to be a special key."""
+
         self.source_group = source_group
-        self.notifier = notifier
         self.resolved_cache: OrderedDict[str, ResolvedDependency] = \
             OrderedDict()
 
@@ -40,16 +53,10 @@ class Resolver:
         if old_tree is not None:
             self._pre_populate_cache(root, old_tree)
 
-        self.notifier.message("Resolving dependencies:")
+        with console().status("Resolving dependencies"):
+            self._first_level_resolve(root)
 
-        self._first_level_resolve(root)
-        # Now all these dependencies should be resolved, and we perform the
-        # resolution depth first. This way we guarantee that whatever is
-        # specified in the rproject file takes precedence because the packages
-        # have been looked up already. Temporary workaround before we get
-        # a better resolver.
-
-        self._resolve_tree_depth_first(root)
+            self._resolve_tree_depth_first(root)
 
     def _pre_populate_cache(self,
                             root: RootDependency,
@@ -163,20 +170,15 @@ class Resolver:
         package.ensure_local()
 
         # Check its dependencies and add them as unresolved.
-        subdep_list: List[StructuralDependency] = []
-        for subdep in package.dependencies:
-            logger.info(f" - {subdep.name}")
-            unresolved_subdep = UnresolvedConstrainedDependency(
-                name=subdep.name,
-                constraint=_adapt_constraint(subdep.constraint),
-                categories=unresolved.categories
-            )
-            subdep_list.append(unresolved_subdep)
+        subdep_list = _extract_subdeps(package)
+        for subdep in subdep_list:
+            subdep.categories = unresolved.categories
 
         resolved_dep = ResolvedSourceDependency(
             name=package.name,
             package=package,
             categories=unresolved.categories,
+            r_constraint=_constraint_list_to_object(package.r_constraint),
             dependencies=subdep_list
         )
 
@@ -188,28 +190,21 @@ class Resolver:
         """Resolve a VCS unresolved dependency"""
         logger.info(f"Cloning {unresolved.name} from {unresolved.url}")
 
-        vcs_store = VCSStore(unresolved.url)
+        vcs_store = VCSStore()
         try:
             vcs_clone_shallow(
                 unresolved.vcs_type,
                 unresolved.url,
                 unresolved.ref,
-                vcs_store.clone_dir(unresolved.ref))
+                vcs_store.clone_dir(unresolved.url, unresolved.ref))
         except ValueError as e:
             raise CannotResolveError(f"VCS clone failed: {e}") from None
 
-        package = DirPackage(vcs_store.clone_dir(unresolved.ref))
-
-        # Extract the dependencies of the found package
-        subdep_list: List[StructuralDependency] = []
-        for subdep in package.dependencies:
-            logger.info(f" - {subdep.name}")
-            unresolved_subdep = UnresolvedConstrainedDependency(
-                name=subdep.name,
-                constraint=_adapt_constraint(subdep.constraint),
-                categories=unresolved.categories
-            )
-            subdep_list.append(unresolved_subdep)
+        package = DirPackage(
+            vcs_store.clone_dir(unresolved.url, unresolved.ref))
+        subdep_list = _extract_subdeps(package)
+        for subdep in subdep_list:
+            subdep.categories = unresolved.categories
 
         resolved_dep = ResolvedVCSDependency(
             name=unresolved.name,
@@ -220,7 +215,7 @@ class Resolver:
             dependencies=subdep_list
         )
 
-        vcs_store.clear_clone(unresolved.ref)
+        vcs_store.clear()
         return resolved_dep
 
     def _resolve_tree_depth_first(self, root: RootDependency) -> None:
@@ -260,8 +255,8 @@ class Resolver:
                            resolved: ResolvedDependency,
                            unresolved: UnresolvedDependency) -> bool:
         """
-        Checks if the resolved dependency satisfies the unresolved
-        dependency constraint.
+        Checks if the resolved dependency we have in the cache
+        satisfies the unresolved dependency constraint.
         """
 
         # The problem here is that this really depends on the type
@@ -275,7 +270,7 @@ class Resolver:
                 if not unresolved.constraint.allows(
                         Version.parse(resolved.package.version)):
                     msg = (
-                        f"Unable to satisfy subdependency constraint: "
+                        f"[error]Unable to satisfy subdependency constraint: "
                         f"Already found dependency "
                         f"{resolved.package.name} "
                         f"{resolved.package.version} cannot "
@@ -283,20 +278,22 @@ class Resolver:
                         f"{unresolved.constraint}")
                     if not isinstance(parent, RootDependency):
                         msg += f" for dependency {parent.name}"
-                    self.notifier.error(msg)
+                    msg += "[/error]"
+                    console().print(msg)
                     return False
                 return True
             elif isinstance(resolved, ResolvedVCSDependency):
-                msg = f"Constrained unresolved dependency {unresolved.name} "
+                msg = f"[warning]Constrained unresolved dependency " \
+                      f"{unresolved.name} "
                 if not isinstance(parent, RootDependency):
                     msg += f"for package {parent.name} "
                 msg += (
                     f"is resolved with VCS dependency {resolved.url}. "
                     f"At this stage, no assumptions can be made on the "
                     f"actual version that will be downloaded at installation "
-                    f"time. "
+                    f"time. [/warning]"
                 )
-                self.notifier.warning(msg)
+                console().print(msg)
                 return True
             elif isinstance(resolved, ResolvedCoreDependency):
                 return True
@@ -305,10 +302,10 @@ class Resolver:
                                 f"type {resolved}")
         elif isinstance(unresolved, UnresolvedVCSDependency):
             if not isinstance(resolved, ResolvedVCSDependency):
-                self.notifier.warning(
-                    f"VCS dependency {unresolved.name} has been "
+                console().print(
+                    f"[warning]VCS dependency {unresolved.name} has been "
                     f"resolved by previously found non-VCS dependency. "
-                    f"The resolution will continue regardless."
+                    f"The resolution will continue regardless.[/warning]"
                 )
             return True
 
@@ -325,22 +322,24 @@ class Resolver:
                 resolved_dep.package.version
                 if not already_found else "..."
             )
-            self.notifier.message(
-                f"- [package]{resolved_dep.package.name}[/package] "
-                f"([version]{version}[/version])",
-                indent=2 + 2 * level)
+            console().print(
+                " "*(2 + 2*level)
+                + f"- [package]{resolved_dep.package.name}[/package] "
+                + f"([version]{version}[/version])"
+            )
         elif isinstance(resolved_dep, ResolvedVCSDependency):
             ref = resolved_dep.ref
             if ref is None:
                 ref = "HEAD"
 
-            self.notifier.message(
-                f"- [package]{resolved_dep.name}[/package] "
-                f"([version]{resolved_dep.vcs_type}@{ref}[/version])",
-                indent=2 + 2 * level)
+            console().print(
+                " "*(2 + 2*level)
+                + f"- [package]{resolved_dep.name}[/package] "
+                + f"([version]{resolved_dep.vcs_type}@{ref}[/version])"
+            )
 
 
-def _adapt_constraint(constraint_list: list) -> VersionConstraint:
+def _constraint_list_to_object(constraint_list: list) -> VersionConstraint:
     """Converts the list of constraint into a VersionConstraint object"""
 
     constraint_string = ",".join(constraint_list)
@@ -355,5 +354,21 @@ def is_core_dependency(dependency_name: str) -> bool:
     return dependency_name in (
         "R", "stats", "utils", "graphics", "grDevices",
         "methods", "tools", "parallel", "splines", "grid",
-        "compiler", "datasets", "stats4", "tcltk", "translations"
+        "compiler", "datasets", "stats4", "tcltk", "translations",
+        "base"
     )
+
+
+def _extract_subdeps(package: PackageABC) -> List[StructuralDependency]:
+    # Extract the dependencies of the found package
+    subdep_list: List[StructuralDependency] = []
+    for subdep in package.dependencies:
+        logger.info(f" - {subdep.name}")
+        unresolved_subdep = UnresolvedConstrainedDependency(
+            name=subdep.name,
+            constraint=_constraint_list_to_object(subdep.constraint),
+            categories=[]
+        )
+        subdep_list.append(unresolved_subdep)
+
+    return subdep_list

@@ -1,9 +1,11 @@
+import re
+from xml.etree import ElementTree
 import textwrap
-import typing
-from typing import Union, List
+from typing import Union, List, Dict, cast, Optional
 import logging
 import pathlib
 import shutil
+import subprocess
 import platform
 import toml
 from .files.rprofile import RProfile
@@ -122,16 +124,23 @@ class Environment:
         shutil.rmtree(self.env_dir)
 
     def init(self,
-             r_executable_path: Union[pathlib.Path, None] = None,
+             r_version: Optional[str] = None,
+             r_executable_path: Optional[pathlib.Path] = None,
              overwrite: bool = False) -> None:
         """Initializes the environment
 
         Args:
+            r_version: the version of R to use to create the env
             r_executable_path: if specified, which R to use to create the env.
                                if not specified, one will be found.
             overwrite: If true, overwrite a pre-existing environment,
                        otherwise raise an error.
         """
+
+        if r_version is not None and r_executable_path is not None:
+            raise ValueError(
+                "Cannot specify both R version and R executable path"
+            )
 
         if self.exists():
             if not overwrite:
@@ -141,13 +150,13 @@ class Environment:
             self.remove()
 
         if r_executable_path is None:
-            r_executable_path = _find_r_executable_path()
-        else:
-            if not r_executable_path.is_file():
-                raise FileNotFoundError(
-                    f"Specified R executable {r_executable_path} does not "
-                    f"exist or is not a file"
-                )
+            r_executable_path = _find_r_executable_path(r_version)
+
+        if not r_executable_path.is_file():
+            raise FileNotFoundError(
+                f"Specified R executable {r_executable_path} does not "
+                f"exist or is not a file"
+            )
 
         # create the new environment
         self.env_dir.mkdir(parents=True, exist_ok=False)
@@ -206,8 +215,6 @@ class Environment:
     @property
     def r_executable_path(self) -> pathlib.Path:
         """Returns the R executable path to invoke for this environment.
-        For backward compatibility, if there is no configuration file
-        it will look for a reasonable path and use that.
         """
         try:
             with open(self.env_dir / "renv.toml", "r", encoding="utf-8") as f:
@@ -218,7 +225,7 @@ class Environment:
         try:
             return pathlib.Path(data["r_executable_path"])
         except KeyError:
-            return _find_r_executable_path()
+            raise KeyError("Unable to find executable path in renv.toml")
 
     def _create_initr(self):
         """Create an init.R file in case it doesn't exist"""
@@ -254,10 +261,10 @@ class Environment:
                 stop(
                     paste0(
                         "Cannot use environment {self.name}. ",
-                        "Currently executing R (",
+                        "Currently executing R ",
                         current_r_version, " ", R.version$platform,
-                        ") is incompatible with environment (",
-                        config$r_version, " ", config$r_platform, ")"
+                        ", but environment is built for R ",
+                        config$r_version, " ", config$r_platform
                     )
                 )
             }}
@@ -265,7 +272,8 @@ class Environment:
             message(
                 paste0(
                     'Using environment {self.name} ',
-                    '(R ', config$r_version, ' ', config$r_platform, ')'
+                    '(R version: ', config$r_version, ', ',
+                    'platform: ', config$r_platform, ')'
                 )
             )
             .libPaths(c('{self.lib_reldir.as_posix()}'))
@@ -291,7 +299,7 @@ class Environment:
             }, f)
 
 
-def available_environments(base_dir: pathlib.Path) -> typing.List[Environment]:
+def available_environments(base_dir: pathlib.Path) -> List[Environment]:
     """
     Returns a list of all available environments in base_dir
     """
@@ -324,41 +332,200 @@ def enabled_environment(base_dir: pathlib.Path) -> Union[Environment, None]:
     return None
 
 
-def _find_r_executable_path() -> pathlib.Path:
+def _find_r_executable_path(r_version: Optional[str] = None) -> pathlib.Path:
     """
-    Finds the R installation available on the machine,
-    trying all possible options and just reverting to a simple "R"
-    invocation if all else fails.
+    Finds the R installation available on the machine.
     """
 
+    # The approach is that we try first to find the all installed homes
+    # and pick the highest active version. If nothing else works, we just
+    # use whatever which R returns.
+
+    if r_version is not None:
+        active = _find_active_r_version(r_version)
+        if active is None:
+            raise FileNotFoundError(
+                f"Unable to find active R executable for version {r_version}"
+            )
+        return cast(pathlib.Path, active["executable_path"])
+
+    active = _find_highest_active_version()
+    if active is not None:
+        return cast(pathlib.Path, active["executable_path"])
+
+    # Fallback on the result of the which command.
     plat = platform.system()
-    candidates = []
     if plat == "Windows":
-        candidates = [
-            "C:\\Program Files\\R\\R-3.6.3\\bin\\R.exe",
-            "C:\\Program Files\\R\\R-3.6.0\\bin\\R.exe",
-        ]
         which = shutil.which("R.exe")
-        if which is not None:
-            candidates.append(which)
-    elif plat == "Linux":
-        candidates = ["/usr/local/bin/R"]
-        which = shutil.which("R")
-        if which is not None:
-            candidates.append(which)
-    elif plat == "Darwin":
-        candidates = ["/usr/local/bin/R"]
-        which = shutil.which("R")
-        if which is not None:
-            candidates.append(which)
     else:
-        raise RuntimeError(f"Unknown platform {plat}")
+        which = shutil.which("R")
 
-    for candidate in candidates:
-        candidate_path = pathlib.Path(candidate)
-        if candidate_path.is_file():
-            return candidate_path
+    if which is None:
+        raise FileNotFoundError(
+            "Unable to find R executable path anywhere")
 
-    raise FileNotFoundError(
-        f"Unable to find an R installation at {candidates}"
+    return pathlib.Path(which)
+
+
+_BASE_WINDOWS_R_INSTALL_PATH = pathlib.Path(r"C:\Program Files\R")
+_BASE_MACOS_R_INSTALL_PATH = pathlib.Path("/Library/Frameworks/R.framework/")
+_BASE_LINUX_R_INSTALL_PATH_LIST = [
+    pathlib.Path("/usr/lib/R/"),
+    pathlib.Path("/usr/local/")
+]
+
+
+def find_all_installed_r_homes() -> List[Dict]:
+    """Finds all available installed R homes.
+    The order is arbitrary and depends on filesystem ordering.
+    Priority must be decided outside.
+    """
+    plat = platform.system()
+    installed_r = []
+    if plat == "Windows":
+        try:
+            for entry in _BASE_WINDOWS_R_INSTALL_PATH.iterdir():
+                m = re.match(r"R-(\d+\.\d+\.\d+)", str(entry.name))
+                if m is not None:
+                    installed_r.append({
+                        "home_path": entry,
+                        "executable_path": entry / "bin" / "R.exe",
+                        "version": m.group(1),
+                        "active": True
+                    })
+        except FileNotFoundError:
+            pass
+    elif plat == "Darwin":
+        try:
+            for entry in (_BASE_MACOS_R_INSTALL_PATH / "Versions").iterdir():
+                if re.match(r"\d+\.\d+", str(entry.name)):
+                    version = _get_plist_version(
+                        entry / "Resources" / "Info.plist"
+                    )
+                    installed_r.append({
+                        "home_path": entry,
+                        "executable_path": entry / "Resources" / "bin" / "R",
+                        "version": version,
+                        "active": False,
+                    })
+
+            runnable_version = _get_plist_version(
+                _BASE_MACOS_R_INSTALL_PATH / "Versions" /
+                "Current" / "Resources" / "Info.plist"
+            )
+
+            for r_entry in installed_r:
+                if r_entry["version"] == runnable_version:
+                    r_entry["active"] = True
+        except (FileNotFoundError, KeyError):
+            pass
+    elif plat == "Linux":
+        # First, try with the base paths
+        for base_path in _BASE_LINUX_R_INSTALL_PATH_LIST:
+            try:
+                version = _get_r_version(base_path / "bin" / "R")
+                installed_r.append({
+                    "home_path": base_path,
+                    "executable_path": base_path / "bin" / "R",
+                    "version": version,
+                    "active": True,
+                })
+            except (FileNotFoundError,
+                    subprocess.CalledProcessError,
+                    KeyError):
+                logger.exception("Failed option")
+
+        # also try under opt, one version per subdir, which is how github
+        # seem to do it. We really need to make this whole detection
+        # thing configurable
+        try:
+            base_path = pathlib.Path("/opt/R/")
+            for entry in base_path.iterdir():
+                logger.info(f"Trying {entry.name}")
+                if re.match(r"\d+\.\d+\.\d+", str(entry.name)):
+                    version = _get_r_version(entry / "bin" / "R")
+                    installed_r.append({
+                        "home_path": entry,
+                        "executable_path": entry / "bin" / "R",
+                        "version": version,
+                        "active": True,
+                    })
+        except (FileNotFoundError,
+                subprocess.CalledProcessError,
+                KeyError):
+            logger.exception("Failed option")
+
+    return installed_r
+
+
+def _get_plist_version(path: pathlib.Path) -> str:
+    """Extract the current version from the macos plist file"""
+    tree = ElementTree.parse(path)
+    root = tree.getroot()
+    if root.tag != "plist":
+        raise KeyError("Invalid plist file")
+
+    dict_ = root[0]
+    if dict_.tag != "dict":
+        raise KeyError("Invalid plist file")
+
+    found_version = False
+    for entry in dict_:
+        if found_version:
+            if entry.tag == "string":
+                if entry.text is None:
+                    raise KeyError("Invalid plist file")
+                return entry.text
+            else:
+                raise KeyError("Invalid plist file")
+        if entry.tag == "key" and entry.text == "CFBundleVersion":
+            found_version = True
+
+    raise KeyError("Invalid plist file")
+
+
+def _get_r_version(path: pathlib.Path) -> str:
+    """Extract the current version from the run of the R executable"""
+
+    output = subprocess.check_output([path, "--version"], encoding="utf-8")
+
+    m = re.match(r"R version\s*(\d\.\d\.\d)", output)
+    if m is None:
+        raise KeyError("Unable to find version in R output")
+
+    version = m.group(1)
+    return version
+
+
+def _find_highest_active_version() -> Optional[Dict]:
+
+    active_homes = filter(lambda x: x["active"] is True,
+                          find_all_installed_r_homes())
+
+    try:
+        highest_version = sorted(
+            active_homes,
+            key=lambda x: [int(i) for i in x["version"].split(".")] +
+                          [x["executable_path"]],
+            reverse=True
+        )[0]
+        return highest_version
+    except IndexError:
+        return None
+
+
+def _find_active_r_version(r_version: str) -> Optional[Dict]:
+    active_homes = filter(
+        lambda x: x["active"] is True and x["version"] == r_version,
+        find_all_installed_r_homes()
     )
+
+    try:
+        active_version = sorted(
+            active_homes,
+            key=lambda x: x["executable_path"],
+            reverse=True
+        )[0]
+        return active_version
+    except IndexError:
+        return None
