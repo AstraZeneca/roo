@@ -33,8 +33,13 @@ class Description:
     def parse(cls, fileobj_or_path) -> Description:
         """Parses a DESCRIPTION file. Returns an instance of this class."""
         if isinstance(fileobj_or_path, (str, pathlib.Path)):
-            with open(fileobj_or_path, encoding="utf-8") as f:
-                data = _parse_fileobj(f)
+            try:
+                with open(fileobj_or_path, encoding="utf-8") as f:
+                    data = _parse_fileobj(f)
+            except FileNotFoundError:
+                raise ParsingError(
+                    f"DESCRIPTION file at {fileobj_or_path} not existent"
+                )
         else:
             data = _parse_fileobj(fileobj_or_path)
 
