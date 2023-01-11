@@ -5,8 +5,10 @@ import hashlib
 import shutil
 import pathlib
 import atomicwrites
+import os
+import json
 from urllib.parse import urlparse
-from typing import Union, Optional
+from typing import Union, Optional, List
 
 
 class SourceCache:
@@ -33,8 +35,21 @@ class SourceCache:
         self.root_dir = root_dir
         self.source_url = source_url
         self.base_dir.mkdir(parents=True, exist_ok=True)
+        meta_path = self.base_dir.with_suffix(".json")
+        if not meta_path.exists():
+            try:
+                with atomicwrites.atomic_write(meta_path, mode="w") as f:
+                    json.dump({
+                        "source_url": self.source_url,
+                    }, f)
+            except FileExistsError:
+                # If the file already exists at this point, it's
+                # likely that a concurrent process created it as well,
+                # so we just keep going.
+                pass
 
     # all computed directories
+
     @property
     def base_dir(self) -> pathlib.Path:
         """
@@ -205,3 +220,47 @@ class SourceCache:
             pass
 
         return pkg_path
+
+    def cached_package_names(self):
+        return [x.name for x in os.scandir(self.base_dir) if x.is_dir()]
+
+    def remove_package(self, package_name):
+        pkg_dir = self.package_dir(package_name)
+        shutil.rmtree(pkg_dir)
+
+
+def all_source_caches(
+        root_dir: Optional[pathlib.Path] = None) -> List[SourceCache]:
+    all_caches = []
+    if root_dir is None:
+        root_dir = pathlib.Path("~/.roo/cache").expanduser()
+
+    remote_source_dir = root_dir / "source" / "remote"
+    locations = [
+        root_dir / "source" / "local"
+    ]
+    try:
+        locations.extend([pathlib.Path(x) for x in os.scandir(
+            remote_source_dir) if x.is_dir()])
+    except FileNotFoundError:
+        pass
+
+    for loc in locations:
+        try:
+            enc_paths = [pathlib.Path(x)
+                         for x in os.scandir(loc) if x.is_dir()]
+        except FileNotFoundError:
+            continue
+        for path in enc_paths:
+            meta = path.with_suffix(".json")
+            try:
+                with open(meta, "rb") as f:
+                    data = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                # skip the cache if the file is not present
+                # or we can't decode the file.
+                continue
+            source_url = data["source_url"]
+            all_caches.append(SourceCache(source_url, root_dir))
+
+    return all_caches

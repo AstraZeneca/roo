@@ -3,7 +3,8 @@ import tarfile
 import shutil
 import pathlib
 import typing
-
+import os
+from typing import List, Tuple, Optional
 import atomicwrites
 
 
@@ -119,17 +120,36 @@ class BuildCache:
                 f"for R version {self.r_version}"
             ) from None
 
-    def clear_build(self, package_name: str, package_version: str):
+    def clear_build(
+            self, package_name: str, package_version: Optional[str] = None):
         """
         Clears the given build for package identified by package_name and
         package_version
         """
-        logger.info(
-            f"Clearing cached build {package_name} {package_version}")
+        entries_to_delete = []
+        if package_version is None:
+            entries_to_delete = [
+                x for x in self.list_builds() if x[0] == package_name
+            ]
+        else:
+            entries_to_delete = [(package_name, package_version)]
 
-        pkg_path = self._package_filename(package_name, package_version)
-        if pkg_path.exists():
-            pkg_path.unlink()
+        for name, version in entries_to_delete:
+            logger.info(
+                f"Clearing cached build {name} {version}")
+
+            pkg_path = self._package_filename(name, version)
+            if pkg_path.exists():
+                pkg_path.unlink()
+
+    def list_builds(self) -> List[Tuple[str, str]]:
+        builds = []
+        for entry in os.scandir(self.base_dir):
+            if entry.name.endswith(".tar.gz"):
+                name, version = _split_package_filename(entry.name)
+                builds.append((name, version))
+
+        return builds
 
     def clear(self):
         """Clear all builds and removes the whole cache."""
@@ -150,3 +170,22 @@ class BuildCache:
 
         """
         return self.base_dir / f"{package_name}_{package_version}.tar.gz"
+
+
+def _split_package_filename(filename: str) -> Tuple[str, str]:
+    return typing.cast(
+        Tuple[str, str],
+        tuple(filename.rsplit(".", maxsplit=2)[0].rsplit("_", maxsplit=1))
+    )
+
+
+def all_build_caches(root_dir: Optional[pathlib.Path] = None) -> List:
+    if root_dir is None:
+        root_dir = pathlib.Path("~/.roo/cache").expanduser()
+
+    caches = []
+    for r_version in (x for x in (root_dir / "build").iterdir() if x.is_dir()):
+        for platform in (x for x in r_version.iterdir() if x.is_dir()):
+            caches.append(BuildCache(r_version.name, platform.name, root_dir))
+
+    return caches
