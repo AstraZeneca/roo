@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.15.0
+
+- #70 Added cache remove and cache list. These commands may not work unless you recreate the cache.
+- #74 ensure that a package is considered present only if the DESCRIPTION file is present.
+
 ## 0.14.0
 
 - #70 Improved error message in case of incorrect environment
