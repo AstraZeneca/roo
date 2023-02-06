@@ -26,6 +26,10 @@ logger = logging.getLogger(__file__)
     "--conservative", is_flag=True, default=False,
     help="Ensures that only minimal changes will be performed to the lock."
 )
+@click.option(
+    "--fix-changed-hash", is_flag=True, default=False,
+    help="When CRAN rebuilds and changes the hash of the package, fixes it."
+)
 def lock(quiet, overwrite, conservative):
     _ensure_lock(overwrite, conservative)
 
