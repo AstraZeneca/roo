@@ -1,6 +1,6 @@
 import click
 from roo.console import console
-from roo.cli.lock import _ensure_lock
+from roo.cli.lock import ensure_lock
 from roo.exporters.exceptions import ExportError
 from roo.exporters.lock.base_exporter import BaseExporter
 from roo.exporters.lock.lock_csv_exporter import LockCSVExporter
@@ -17,7 +17,7 @@ def export():
 @click.argument("format", type=click.Choice(["csv", "packrat", "renv"]))
 @click.argument("output", type=click.Path(writable=True), required=False)
 def export_lock(format, output):
-    lock_file = _ensure_lock(False, False)
+    lock_file = ensure_lock(False, False, False)
 
     exporter: BaseExporter
     if format == "csv":

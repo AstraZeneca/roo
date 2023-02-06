@@ -64,7 +64,7 @@ def ensure_lock(
     try:
         old_lock = Lock.parse(lock_path)
     except FileNotFoundError:
-        console().print("[warning]Lockfile not found. Creating it.[/warning]")
+        console().print("[warning]Lockfile not found.[/warning]")
     except ParsingError as e:
         logger.exception("Unable to parse current lockfile")
         console().print(
@@ -79,11 +79,14 @@ def ensure_lock(
 
     locker = Locker()
     try:
-        new_lock = locker.lock(
-            rproject, old_lock, conservative, fix_changed_hash
-        )
+        if fix_changed_hash:
+            new_lock = locker.fix_hash(old_lock)
+        else:
+            new_lock = locker.lock(
+                rproject, old_lock, conservative
+            )
     except CannotResolveError as e:
-        raise click.ClickException(f"Unable to sync lock files: {e}")
+        raise click.ClickException(f"Unable to create lock file: {e}")
 
     new_lock.save(old_lock.path)
     return new_lock
