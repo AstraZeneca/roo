@@ -33,7 +33,8 @@ class Locker:
         )
 
     def lock(self,
-             rproject: RProject, old_lock: Lock, conservative: bool) -> Lock:
+             rproject: RProject, old_lock: Lock, conservative: bool,
+             fix_changed_hash: bool) -> Lock:
         """
         Perform the actual creation of a new lock.
 

@@ -1,7 +1,6 @@
 import logging
 import os
 import pathlib
-from typing import Optional
 
 import click
 from roo.console import console
@@ -28,13 +27,18 @@ logger = logging.getLogger(__file__)
 )
 @click.option(
     "--fix-changed-hash", is_flag=True, default=False,
-    help="When CRAN rebuilds and changes the hash of the package, fixes it."
+    help=(
+        "Only fix change of recorded package hash. "
+        "NOTE: this might hide a security threat."
+    )
 )
-def lock(quiet, overwrite, conservative):
-    _ensure_lock(overwrite, conservative)
+def lock(quiet, overwrite, conservative, fix_changed_hash):
+    ensure_lock(overwrite, conservative, fix_changed_hash)
 
 
-def _ensure_lock(overwrite: bool, conservative: Optional[bool]) -> Lock:
+def ensure_lock(
+        overwrite: bool, conservative: bool, fix_changed_hash: bool
+) -> Lock:
     """
     Ensure that a lock file is present and sync.
 
@@ -70,12 +74,14 @@ def _ensure_lock(overwrite: bool, conservative: Optional[bool]) -> Lock:
     if old_lock is None:
         old_lock = Lock()
 
-    if conservative is None:
+    if not conservative:
         conservative = old_lock.metadata.conservative
 
     locker = Locker()
     try:
-        new_lock = locker.lock(rproject, old_lock, conservative)
+        new_lock = locker.lock(
+            rproject, old_lock, conservative, fix_changed_hash
+        )
     except CannotResolveError as e:
         raise click.ClickException(f"Unable to sync lock files: {e}")
 

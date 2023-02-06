@@ -3,7 +3,7 @@ from typing import Union
 import logging
 
 import click
-from roo.cli.lock import _ensure_lock
+from roo.cli.lock import ensure_lock
 from roo.console import console
 from roo.environment import enabled_environment, Environment
 from roo.installer import Installer, InstallationError
@@ -65,7 +65,7 @@ def install(env_base_dir: Union[str, pathlib.Path],
             serial: bool,
             use_vanilla: bool):
 
-    lock_file = _ensure_lock(False, False)
+    lock_file = ensure_lock(False, False, False)
 
     env_base_dir = pathlib.Path(env_base_dir)
 
