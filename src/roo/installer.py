@@ -185,15 +185,15 @@ class Installer:
                 f"expected.[/error]"
             )
             console().print(
-                f"[error]\u203C This may indicate a corrupted "
-                f"or tampered file on the source, and may be a security "
-                f"issue.[/error]"
+                "[error]\u203C This may indicate a corrupted "
+                "or tampered file on the source, and may be a security "
+                "issue.[/error]"
             )
             console().print(
-                f"[error]\u203C Accurately determine the reason for "
-                f"the discrepancy and accept the variation with "
-                f"'roo lock --fix-changed-hash' if no issues are found."
-                f"[/error]"
+                "[error]\u203C Accurately determine the reason for "
+                "the discrepancy and accept the variation with "
+                "'roo lock --fix-changed-hash' if no issues are found."
+                "[/error]"
             )
             raise InstallationError(
                 f"Unable to install package {source_package.name} "
