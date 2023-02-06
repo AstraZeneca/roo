@@ -234,8 +234,10 @@ class Installer:
         )
 
         console().print(
-            f":white_check_mark: [success]Installed[/success] "
-            f"[package]{dep.name}[/package] from VCS {dep.url}@{dep.ref}")
+            f"[success]\u2022[/success] Installed "
+            f"[package]{dep.name}[/package] from VCS {dep.url}" +
+            (f"@{dep.ref}" if dep.ref else "")
+        )
 
         # Delete the cache only in case of success, so it's easier to check
         # what went wrong in case of error.
