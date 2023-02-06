@@ -178,11 +178,27 @@ class Installer:
         )
 
         if not source_package.hash_match():
-            raise InstallationError(
-                f"Hash for package "
+            console().print(
+                f"[error]\u203C Hash for package "
                 f"{source_package.name} {source_package.version}, "
                 f"file {source_package.filename} is different from the "
-                f"expected.")
+                f"expected.[/error]"
+            )
+            console().print(
+                f"[error]\u203C This may indicate a corrupted "
+                f"or tampered file on the source, and may be a security "
+                f"issue.[/error]"
+            )
+            console().print(
+                f"[error]\u203C Accurately determine the reason for "
+                f"the discrepancy and accept the variation with "
+                f"'roo lock --fix-changed-hash' if no issues are found."
+                f"[/error]"
+            )
+            raise InstallationError(
+                f"Unable to install package {source_package.name} "
+                f"{source_package.version} with incorrect hash"
+            )
 
     def _install_package_from_vcs_store(self,
                                         dep: ResolvedVCSDependency,
