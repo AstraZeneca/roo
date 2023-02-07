@@ -1,7 +1,6 @@
 import logging
 import os
 import pathlib
-from typing import Optional
 
 import click
 from roo.console import console
@@ -26,11 +25,20 @@ logger = logging.getLogger(__file__)
     "--conservative", is_flag=True, default=False,
     help="Ensures that only minimal changes will be performed to the lock."
 )
-def lock(quiet, overwrite, conservative):
-    _ensure_lock(overwrite, conservative)
+@click.option(
+    "--fix-changed-hash", is_flag=True, default=False,
+    help=(
+        "Only fix change of recorded package hash. "
+        "NOTE: this might hide a security threat."
+    )
+)
+def lock(quiet, overwrite, conservative, fix_changed_hash):
+    ensure_lock(overwrite, conservative, fix_changed_hash)
 
 
-def _ensure_lock(overwrite: bool, conservative: Optional[bool]) -> Lock:
+def ensure_lock(
+        overwrite: bool, conservative: bool, fix_changed_hash: bool
+) -> Lock:
     """
     Ensure that a lock file is present and sync.
 
@@ -56,7 +64,7 @@ def _ensure_lock(overwrite: bool, conservative: Optional[bool]) -> Lock:
     try:
         old_lock = Lock.parse(lock_path)
     except FileNotFoundError:
-        console().print("[warning]Lockfile not found. Creating it.[/warning]")
+        console().print("[warning]Lockfile not found.[/warning]")
     except ParsingError as e:
         logger.exception("Unable to parse current lockfile")
         console().print(
@@ -66,14 +74,19 @@ def _ensure_lock(overwrite: bool, conservative: Optional[bool]) -> Lock:
     if old_lock is None:
         old_lock = Lock()
 
-    if conservative is None:
+    if not conservative:
         conservative = old_lock.metadata.conservative
 
     locker = Locker()
     try:
-        new_lock = locker.lock(rproject, old_lock, conservative)
+        if fix_changed_hash:
+            new_lock = locker.fix_hash(old_lock)
+        else:
+            new_lock = locker.lock(
+                rproject, old_lock, conservative
+            )
     except CannotResolveError as e:
-        raise click.ClickException(f"Unable to sync lock files: {e}")
+        raise click.ClickException(f"Unable to create lock file: {e}")
 
     new_lock.save(old_lock.path)
     return new_lock

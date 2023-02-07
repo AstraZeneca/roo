@@ -2,7 +2,7 @@ import logging
 
 from roo.console import console
 
-from .parsers.lock import Lock, Source
+from .parsers.lock import Lock, Source, SourceLockEntry
 
 from .sources.source_group import create_source_group_from_config_list
 
@@ -33,7 +33,8 @@ class Locker:
         )
 
     def lock(self,
-             rproject: RProject, old_lock: Lock, conservative: bool) -> Lock:
+             rproject: RProject, old_lock: Lock, conservative: bool
+             ) -> Lock:
         """
         Perform the actual creation of a new lock.
 
@@ -82,3 +83,38 @@ class Locker:
         lock.metadata.env_id = rproject.metadata.env_id
         lock.metadata.conservative = conservative
         return lock
+
+    def fix_hash(self, old_lock: Lock) -> Lock:
+        source_group = create_source_group_from_config_list(old_lock.sources)
+
+        for entry in old_lock.entries:
+            if not isinstance(entry, SourceLockEntry):
+                continue
+            source = source_group.source_by_name(entry.source)
+            package = source.find_package(entry.name, entry.version)
+            with console().status(
+                    f"[message]Checking[/message] "
+                    f"[package]{package.name}[/package] "
+                    f"([version]{package.version}[/version]) "
+                    f"from {package.source.name}"):
+                package.retrieve()
+
+                for f in entry.files:
+                    if package.filename == f.name:
+                        if package.hash != f.hash:
+                            console().print(
+                                f"[warning]! Fixed discrepancy for package"
+                                f"[/warning] "
+                                f"[package]{entry.name}[/package] "
+                                f"([version]{entry.version}[/version])"
+                            )
+                            f.hash = package.hash
+                            f.md5 = package.md5
+                        else:
+                            console().print(
+                                f"[success]\u2022[/success] No discrepancy "
+                                f"for package [package]{entry.name}[/package] "
+                                f"([version]{entry.version}[/version])"
+                            )
+
+        return old_lock

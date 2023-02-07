@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.8]
@@ -22,12 +22,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
       - name: Set up R ${{ matrix.r-version }}
-        uses: r-lib/actions/setup-r@v1
+        uses: r-lib/actions/setup-r@v2
         with:
           r-version: ${{ matrix.r-version }}
       - name: Install dependencies
         run: |
             pip install poetry
-            poetry install 
-      - name: Unittest 
+            poetry install
+      - name: Unittest
         run: poetry run pytest .
