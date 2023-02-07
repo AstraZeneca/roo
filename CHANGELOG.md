@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.16.0
+
+- #79 Fixed incorrect checkmark with VCS installation
+- #78 Add "--fix-changed-hash" to roo lock
+
 ## 0.15.0
 
 - #70 Added cache remove and cache list. These commands may not work unless you recreate the cache.
