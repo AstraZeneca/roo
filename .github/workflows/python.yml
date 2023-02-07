@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         python-version: [3.8]
@@ -28,6 +28,6 @@ jobs:
       - name: Install dependencies
         run: |
             pip install poetry
-            poetry install 
-      - name: Unittest 
+            poetry install
+      - name: Unittest
         run: poetry run pytest .
