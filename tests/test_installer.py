@@ -12,7 +12,6 @@ from roo.sources.exceptions import PackageNotFoundError
 from roo.parsers.lock import Lock, SourceLockEntry
 from roo.locker import Locker
 from roo.parsers.rproject import RProject
-
 from tests.conftest import chdir
 
 
@@ -105,7 +104,7 @@ def test_install_with_wrong_sha(tmpdir, fixture_file):
                 InstallationError,
                 match=(
                     "Unable to install package assertthat 0.2.1"
-                    "with incorrect hash"
+                    " with incorrect hash"
                 )):
             installer.install_lockfile(lock_file, env)
 
