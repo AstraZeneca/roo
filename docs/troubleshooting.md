@@ -3,7 +3,7 @@
 In this section, we'll address the commonly occurring issues we have found
 while using Roo.
 
-# On Windows, roo fails when trying to uninstall a package
+## On Windows, roo fails when trying to uninstall a package
 
 This problem arises from the fact that RStudio is running. On Windows, files
 that are used by one process cannot be deleted. If RStudio is using that file,

@@ -25,10 +25,7 @@ Dependencies will be installed automatically.
 
 # Documentation
 
+- [Rationale](docs/rationale.md)
 - [Basic Usage](docs/usage.md)
-
-
-## Rationale and explanations
-
-- [The problem with transitive dependencies](docs/transdeps.md): Explains what's the core issue roo tries to solve.
-- [Why roo?](docs/why.md): Explains the rationale and comparison against renv and similar tools.
+- [Advanced Usage](docs/advanced.md)
+- [Troubleshooting](docs/troubleshooting.md)

@@ -270,22 +270,3 @@ each needing a different environment, or if you want to test your application
 with different versions of R.
 
 Using multiple environments is an advanced topic and will be discussed later.
-
-## Other useful roo commands
-
-### Exporting the lock file
-
-You can export your lockfile to a different format. Currently supported formats
-are csv and packrat::
-
-    $ roo export lock csv myenv.csv
-
-### Searching for a package on the sources
-
-You can search for the available versions of a package by issuing::
-
-    $ roo package search testthat
-
-This will provide a list of all the available versions of ``testthat`` on
-the various sources you specified in the rproject file. The currently active
-(most recent, not in archive) version will also be specified.

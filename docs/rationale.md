@@ -35,8 +35,7 @@ scientist you are unlikely to need Roo in your daily work, because Roo is
 mostly focused on production-level rather than exploratory coding. However, if time
 allows, an R interface will be written to at least install from a roo lock file.
 
-Isn't CRAN supposed to handle this issue?
-'''''''''''''''''''''''''''''''''''''''''
+### Isn't CRAN supposed to handle this issue?
 
 CRAN has a build process to check submitted packages. In the R world,
 the approach to dependency management is generally to target a "freeze" of
@@ -59,8 +58,7 @@ Poetry, cargo, all follow a very liberal approach to dependency management,
 and just ensure that the environment you create is satisfied by checking the
 constraints for being all satisfied by the selected packages.
 
-Why Roo isn't as good as other package managers
-'''''''''''''''''''''''''''''''''''''''''''''''
+### Why Roo isn't as good as other package managers
 
 Roo at the moment is unable to find a possible solution that satisfies all
 constraints, all by itself. This is the so called "SAT problem" or satisfiability
