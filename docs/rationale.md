@@ -1,5 +1,4 @@
-Rationale
----------
+# Rationale
 
 Roo was born out of frustration at the current R environment handling tools
 that are not up to expected needs when it's time to ensure a reproducible
@@ -14,8 +13,7 @@ argue that packrat or renv freezes the packages in the current environment,
 unfortunately the mechanism with which those packages are discovered to begin
 with has potential issues.
 
-Subdependency conflicts, and why it's a problem
-'''''''''''''''''''''''''''''''''''''''''''''''
+## Subdependency conflicts, and why it's a problem
 
 Say for example that you want to install two packages, ``A`` and ``B``.
 Both depend on package ``C``.  However, ``A`` depends on ``C >= 2``, and ``B``
@@ -37,8 +35,7 @@ scientist you are unlikely to need Roo in your daily work, because Roo is
 mostly focused on production-level rather than exploratory coding. However, if time
 allows, an R interface will be written to at least install from a roo lock file.
 
-Isn't CRAN supposed to handle this issue?
-'''''''''''''''''''''''''''''''''''''''''
+### Isn't CRAN supposed to handle this issue?
 
 CRAN has a build process to check submitted packages. In the R world,
 the approach to dependency management is generally to target a "freeze" of
@@ -61,8 +58,7 @@ Poetry, cargo, all follow a very liberal approach to dependency management,
 and just ensure that the environment you create is satisfied by checking the
 constraints for being all satisfied by the selected packages.
 
-Why Roo isn't as good as other package managers
-'''''''''''''''''''''''''''''''''''''''''''''''
+### Why Roo isn't as good as other package managers
 
 Roo at the moment is unable to find a possible solution that satisfies all
 constraints, all by itself. This is the so called "SAT problem" or satisfiability

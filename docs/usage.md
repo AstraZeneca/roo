@@ -1,8 +1,6 @@
-Usage
-=====
+# Usage
 
-The rproject.toml file
-----------------------
+## The rproject.toml file
 
 All of the configuration of Roo happens in the rproject.toml file.
 This file is in TOML format. It's an easy to read format very similar (but
@@ -11,8 +9,7 @@ keys are assigned to values with the equal (=) sign.
 Additionally, it's possible to define lists using double square brackets
 sections [[]].
 
-Create a basic rproject.toml
-----------------------------
+## Create a basic rproject.toml
 
 You can create a basic initial rproject.toml by issuing::
 
@@ -37,8 +34,7 @@ only) of many different sources for our packages. By default we use CRAN
 mirror on r-project. The name is an arbitrary string, and the url must be
 pointing at the CRAN or CRAN-like location.
 
-Adding a new remote source: the tool.roo.source section
--------------------------------------------------------
+## Adding a new remote source: the tool.roo.source section
 
 To add a new source, add a new double-square bracket section, like this::
 
@@ -69,8 +65,7 @@ priority section.
 You can add as many sources as you want, as long as they have different
 names.
 
-Configuring a proxy for a source
-''''''''''''''''''''''''''''''''
+### Configuring a proxy for a source
 
 Roo allows to specify a proxy for each of the sources, using the keyword
 ``proxy``. For example, this configuration will use proxya to connect to CRAN
@@ -86,8 +81,7 @@ and proxyb to connect to Internal::
     proxy = "http://proxyb"
     url = "https://my.internal.address/"
 
-Using priorities
-''''''''''''''''
+### Using priorities
 
 Priorities specify the order of resolutions of packages. It is quite important
 to ensure not only reproducibility, but also to prevent potential security
@@ -125,8 +119,7 @@ With this specification, you will keep using the Internal version. You are
 effectively shadowing away any module from e.g. CRAN that happens to have a
 name you are claiming on your Internal repository.
 
-Defining your environment: tool.roo.dependencies and friends
-------------------------------------------------------------
+## Defining your environment: tool.roo.dependencies and friends
 
 Your program requires dependencies to run. You specify these dependencies
 in various sections, each related to a specific category of dependencies.
@@ -179,8 +172,7 @@ Or knitr or pkgdown in the doc-dependencies::
 In some cases, this division could be useful, for example to speed up Continuous
 Documentation building.
 
-A digression: what about the DESCRIPTION dependencies?
-''''''''''''''''''''''''''''''''''''''''''''''''''''''
+### A digression: what about the DESCRIPTION dependencies?
 
 A common question you might wonder at this point is: are we duplicating
 information if we specify the dependencies both here and in the DESCRIPTION
@@ -198,8 +190,7 @@ an abstract interface, and the rproject is a way to specify and obtain the
 concrete implementation of that interface. They are related, but do not
 mean the same.
 
-Creating a lock file
---------------------
+## Creating a lock file
 
 The rproject.toml specifies a set of version constraints to satisfy when we
 download our package. To resolve these constraints, we issue the following
@@ -226,8 +217,7 @@ Once you have a lock, you don't need to create it again unless you want
 to upgrade your environment for whatever reason. New developers simply can
 create the environment using ``roo install``, as we'll see in a moment.
 
-Installing the lock
--------------------
+## Installing the lock
 
 Once the lock file is created, you can install its content with::
 
@@ -236,8 +226,7 @@ Once the lock file is created, you can install its content with::
 The command will download and compile the packages in the correct order.
 
 
-What to do if the compilation fails
------------------------------------
+## What to do if the compilation fails
 
 Sometimes the compilation of a package may fail. There could be many reasons,
 from an improperly setup R tools, to a missing library on your machine.
@@ -252,8 +241,7 @@ Note that Roo never downloads binary packages, so it will always need
 compilation from sources. The reason is that binary packages are only
 available for the latest version only, not for the archived ones.
 
-Using the newly created environment
------------------------------------
+## Using the newly created environment
 
 When you don't specify otherwise, Roo creates an environment called "default".
 This environment contains all the compiled packages. You can see the currently
@@ -282,25 +270,3 @@ each needing a different environment, or if you want to test your application
 with different versions of R.
 
 Using multiple environments is an advanced topic and will be discussed later.
-
-Other useful roo commands
--------------------------
-
-Exporting the lock file
-'''''''''''''''''''''''
-
-You can export your lockfile to a different format. Currently supported formats
-are csv and packrat::
-
-    $ roo export lock csv myenv.csv
-
-Searching for a package on the sources
-''''''''''''''''''''''''''''''''''''''
-
-You can search for the available versions of a package by issuing::
-
-    $ roo package search testthat
-
-This will provide a list of all the available versions of ``testthat`` on
-the various sources you specified in the rproject file. The currently active
-(most recent, not in archive) version will also be specified.
