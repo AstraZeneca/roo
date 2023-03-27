@@ -1,5 +1,4 @@
-Rationale
----------
+# Rationale
 
 Roo was born out of frustration at the current R environment handling tools
 that are not up to expected needs when it's time to ensure a reproducible
@@ -14,8 +13,7 @@ argue that packrat or renv freezes the packages in the current environment,
 unfortunately the mechanism with which those packages are discovered to begin
 with has potential issues.
 
-Subdependency conflicts, and why it's a problem
-'''''''''''''''''''''''''''''''''''''''''''''''
+## Subdependency conflicts, and why it's a problem
 
 Say for example that you want to install two packages, ``A`` and ``B``.
 Both depend on package ``C``.  However, ``A`` depends on ``C >= 2``, and ``B``
