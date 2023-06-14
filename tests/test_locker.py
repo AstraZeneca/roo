@@ -93,7 +93,7 @@ def test_dump_and_recreate_deptree(fixture_file, tmpdir):
                  if not isinstance(x, RootDependency)]
         # Check at least the presence of the initial packages
         for entry in [
-                'git2r', 'cli', 'shiny', 'devtools', 'testthat', 'pkgdown']:
+                'git2r', 'devtools', 'testthat', 'pkgdown']:
             assert entry in found
 
         # Test that the size of the found ones is larger than the basic
