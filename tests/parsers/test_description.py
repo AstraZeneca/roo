@@ -32,3 +32,11 @@ def test_duplicated_entries(fixture_file):
     dep_list = [d for d in description.dependencies if d.name == "Rcpp"]
     assert len(dep_list) == 1
     assert dep_list[0].constraint == ['>= 1.0.1']
+
+
+def test_incorrect_keyword_identified(fixture_file):
+    description = Description.parse(
+        fixture_file("DESCRIPTION_incorrect_keyword_identified")
+    )
+
+    assert len(description.dependencies) == 5

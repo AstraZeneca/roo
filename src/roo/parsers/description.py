@@ -89,7 +89,7 @@ def _parse_fileobj(fileobj) -> dict:
 
     current_keyword = None
     for line in fileobj:
-        m_keyword = re.match(r"^(.+?):\s(.*)", line)
+        m_keyword = re.match(r"^([A-Za-z0-9@/_\-\.]+?):\s(.*)", line)
         m_continuation = re.match(r"^\s+", line)
         if m_keyword is not None:
             current_keyword = m_keyword.group(1)
