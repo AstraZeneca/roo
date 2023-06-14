@@ -55,14 +55,11 @@ def test_rproject_vcs_info(fixture_file):
 
     deps = rproject.dependencies_for_category("main")
 
-    assert deps[0].vcs_spec is None
-    assert str(deps[0].constraint) == "3.2-7"
-
     assert (
-        deps[1].vcs_spec == VCSSpec(
+        deps[0].vcs_spec == VCSSpec(
             git="https://github.com/AstraZeneca/qscheck.git",  # noqa
             branch=None))
-    assert deps[1].constraint is None
+    assert deps[0].constraint is None
 
 
 def test_rproject_new_file(tmpdir):

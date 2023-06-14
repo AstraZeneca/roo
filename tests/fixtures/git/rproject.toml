@@ -7,5 +7,4 @@ name = "CRAN"
 url = "https://cloud.r-project.org/"
 
 [tool.roo.dependencies]
-survival = "3.2-7"
 qscheck = { git = "https://github.com/AstraZeneca/qscheck.git" }

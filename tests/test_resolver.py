@@ -18,8 +18,8 @@ def test_resolver(fixture_file):
     root = RootDependency(
         dependencies=[
             UnresolvedConstrainedDependency(
-                name="survival",
-                constraint=parse_constraint("3.2-7"),
+                name="stringr",
+                constraint=parse_constraint("1.5.0"),
                 categories=["main"]
             )
         ]
