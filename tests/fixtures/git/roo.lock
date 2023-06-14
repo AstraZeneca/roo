@@ -1,0 +1,135 @@
+[[source]]
+name = "CRAN"
+url = "https://cloud.r-project.org/"
+
+[[entry]]
+categories = []
+dependencies = [ "qscheck", "survival",]
+type = "root"
+
+[[entry]]
+categories = [ "main",]
+dependencies = [ "R", "graphics", "grid", "lattice", "methods", "stats", "utils",]
+name = "Matrix"
+version = "1.3-4"
+source = "CRAN"
+type = "source"
+[[entry.files]]
+name = "Matrix_1.3-4.tar.gz"
+hash = "sha256:ab42179d44545e99bbdf44bb6d04cab051dd2aba552b1f6edd51ed71b55f6c39"
+
+
+[[entry]]
+categories = [ "main",]
+dependencies = []
+name = "R"
+type = "core"
+
+[[entry]]
+categories = [ "main",]
+dependencies = [ "R",]
+name = "R6"
+version = "2.5.1"
+source = "CRAN"
+type = "source"
+[[entry.files]]
+name = "R6_2.5.1.tar.gz"
+hash = "sha256:8d92bd29c2ed7bf15f2778618ffe4a95556193d21d8431a7f75e7e5fc102bf48"
+
+
+[[entry]]
+categories = [ "main",]
+dependencies = [ "tools",]
+name = "assertthat"
+version = "0.2.1"
+source = "CRAN"
+type = "source"
+[[entry.files]]
+name = "assertthat_0.2.1.tar.gz"
+hash = "sha256:85cf7fcc4753a8c86da9a6f454e46c2a58ffc70c4f47cac4d3e3bcefda2a9e9f"
+
+
+[[entry]]
+categories = [ "main",]
+dependencies = []
+name = "grDevices"
+type = "core"
+
+[[entry]]
+categories = [ "main",]
+dependencies = []
+name = "graphics"
+type = "core"
+
+[[entry]]
+categories = [ "main",]
+dependencies = []
+name = "grid"
+type = "core"
+
+[[entry]]
+categories = [ "main",]
+dependencies = [ "R", "grDevices", "graphics", "grid", "stats", "utils",]
+name = "lattice"
+version = "0.20-44"
+source = "CRAN"
+type = "source"
+[[entry.files]]
+name = "lattice_0.20-44.tar.gz"
+hash = "sha256:57b908e3c7ada08a38ad857ee44f44fdf9cfa59d5d9500bda2ccc9c7e96cdb9b"
+
+
+[[entry]]
+categories = [ "main",]
+dependencies = []
+name = "methods"
+type = "core"
+
+[[entry]]
+categories = [ "main",]
+dependencies = [ "R", "R6", "assertthat",]
+name = "qscheck"
+vcs_type = "git"
+url = "https://github.com/AstraZeneca/qscheck.git"
+type = "vcs"
+
+[[entry]]
+categories = [ "main",]
+dependencies = []
+name = "splines"
+type = "core"
+
+[[entry]]
+categories = [ "main",]
+dependencies = []
+name = "stats"
+type = "core"
+
+[[entry]]
+categories = [ "main",]
+dependencies = [ "Matrix", "R", "graphics", "methods", "splines", "stats", "utils",]
+name = "survival"
+version = "3.2-7"
+source = "CRAN"
+type = "source"
+[[entry.files]]
+name = "survival_3.2-7.tar.gz"
+hash = "sha256:5356cd73da7ecfda4042e8a8ae00d3531b106f7b39ca31a1843eadf288418a46"
+
+
+[[entry]]
+categories = [ "main",]
+dependencies = []
+name = "tools"
+type = "core"
+
+[[entry]]
+categories = [ "main",]
+dependencies = []
+name = "utils"
+type = "core"
+
+[metadata]
+version = 2
+content_hash = "d7494e68fefbb22708c8506a0f6cebc31504626abcd58fe62dd495bcf96dd9ae"
+conservative = false
