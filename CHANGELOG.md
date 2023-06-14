@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.17.0
+
+- #84 Change DESCRIPTION parser to be more robust against real DESCRIPTION files
+- #81 Update documentation so that it's in markdown format
+
 ## 0.16.0
 
 - #79 Fixed incorrect checkmark with VCS installation
