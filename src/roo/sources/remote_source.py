@@ -249,7 +249,6 @@ def _is_package_entry(entry: Any) -> bool:
     href = entry["href"]
     return cast(bool, (
         href.endswith("gz")
-        and href == entry.string
         and href != "PACKAGES.gz"
     ))
 
@@ -257,7 +256,7 @@ def _is_package_entry(entry: Any) -> bool:
 def _is_dir_entry(entry: Any) -> bool:
     """Returns true if the html entry refers to a directory."""
     href = entry["href"]
-    return cast(bool, (href.endswith("/") and href == entry.string))
+    return cast(bool, (href.endswith("/")))
 
 
 def _get_pkgfiles_and_dirs_at_url(session: Any, url: str) -> tuple:
