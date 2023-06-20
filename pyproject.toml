@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "roo"
-version = "0.17.0"
+version = "0.17.1"
 description = "A package manager to handle R environments"
 authors = ["Stefano Borini <stefano.borini@astrazeneca.com>"]
 license = "Apache-2.0"

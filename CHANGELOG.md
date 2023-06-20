@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.17.1
+
+- #82 Fix for some repositories cutting the name, which leads to packages not being detected.
+
 ## 0.17.0
 
 - #84 Change DESCRIPTION parser to be more robust against real DESCRIPTION files
