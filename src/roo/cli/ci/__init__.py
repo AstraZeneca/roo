@@ -95,7 +95,7 @@ def ci(env_base_dir: Union[str, pathlib.Path],
         lock_file = Lock.parse(lock_path)
     except FileNotFoundError:
         console().print("[error]Lockfile not found.[/error]")
-        raise click.ClickException(f"Lockfile not found")
+        raise click.ClickException("Lockfile not found")
     except ParsingError as e:
         logger.exception("Unable to parse current lockfile")
         console().print(
