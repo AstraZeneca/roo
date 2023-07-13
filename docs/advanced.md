@@ -100,3 +100,16 @@ Note that there is no way to rely on the version of the package at `roo lock` ti
 The version can only be determined at `roo install`. The reason is that the content
 of the repository can change between the time the lock is created and the time
 the lock is installed.
+
+## Using roo on github actions and other CI
+
+The `roo install` command is designed to help the user imn recreating
+the lock if it is desynchronized with the current rproject specification.
+This is convenient for the user, but for CI machines that need to create the
+environment this may be problematic. Imagine the scenario where a developer
+commits the rproject.toml but not the roo.lock. Using `roo install`, the CI
+machine will recreate the lock and install the packages, but in reality the
+correct course of action would be to let the user know something is odd.
+
+The command `roo ci` does precisely this task. It is exactly like `roo install`,
+except that it will fail if a desynchronization is detected between the two files.
