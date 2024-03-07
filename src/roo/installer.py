@@ -143,15 +143,17 @@ class Installer:
 
         return plan
 
-    def _check_uninstallable_source_deps(self,
-                                         plan: Plan,
-                                         r_version: str
-                                         ) -> Union[ResolvedSourceDependency, None]:
+    def _check_uninstallable_source_deps(
+            self,
+            plan: Plan,
+            r_version: str) -> Union[ResolvedSourceDependency, None]:
         """
-        Checks if the plan source dependencies can be installed on the given R environment version
+        Checks if the plan source dependencies can be installed on
+        the given R environment version
         """
-        # Note: vcs dependencies can change their restriction at a later stage, so we can't investigate
-        # it until we actually git clone it and read the description file
+        # Note: vcs dependencies can change their restriction at a later
+        # stage, so we can't investigate it until we actually git clone
+        # it and read the description file
         for layer in plan:
             for dep in layer:
                 if isinstance(dep, ResolvedSourceDependency):
@@ -173,7 +175,8 @@ class Installer:
                     self._checkout_from_vcs(dep)
                 elif isinstance(dep, ResolvedSourceDependency):
                     package = dep.package
-                    # For source deps, no point in downloading if it's in the cache
+                    # For source deps, no point in downloading if it's in the
+                    # cache
                     # or in the environment
                     if build_cache.has_build(package.name, package.version):
                         continue
