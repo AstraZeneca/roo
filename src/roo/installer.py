@@ -1,6 +1,6 @@
 import logging
 import pathlib
-from typing import List, cast, Generator
+from typing import List, cast, Union, Optional
 
 from roo.caches.vcs_store import VCSStore
 from roo.semver import Version
@@ -19,6 +19,8 @@ from .sources.vcs import vcs_clone_shallow
 from .console import console
 
 logger = logging.getLogger(__file__)
+
+Plan = List[List[ResolvedDependency]]
 
 
 class InstallationError(Exception):
@@ -56,7 +58,7 @@ class Installer:
     def install_lockfile(self,
                          lockfile: Lock,
                          environment: Environment,
-                         install_dep_categories: list = None,
+                         install_dep_categories: Optional[List] = None,
                          ) -> None:
         """
         Installs the content of a given lockfile into an environment.
@@ -89,57 +91,106 @@ class Installer:
             f"[environment]{environment.name}[/environment].")
 
         deptree = lock_entries_to_deptree(source_group, lockfile.entries)
-        # I am forced to go through the plan three times.
-        # First is to check that all R constraints are satisfied with the
-        # current version of R we are using, so we don't waste time building
-        # a doomed attempt
-        executor = environment.executor(
-            quiet=not self._verbose_build,
-            use_vanilla=self._use_vanilla
-        )
-        r_version = executor.version
-        plan = plan_generator(deptree, install_dep_categories)
-        for dep in plan:
-            if isinstance(dep, ResolvedSourceDependency):
-                if not (dep.r_constraint.allows(Version.parse(r_version))):
-                    console().print(
-                        f"[error]Cannot install {dep.name} in environment "
-                        f"{environment.name}. "
-                        f"{dep.name} requires R {dep.r_constraint} but "
-                        f"environment is for R {r_version}[/error]"
-                    )
-                    raise InstallationError(
-                        f"R version violation for {dep.name}"
-                    )
+        plan = self._build_install_plan(deptree, install_dep_categories)
+        version_info = environment.r_version_info
+        build_cache = BuildCache(
+            version_info["version"], version_info["platform"])
 
+        dep = self._check_uninstallable_source_deps(
+            plan, version_info["version"])
+        if dep is not None:
+            console().print(
+                f"[error]Cannot install {dep.name} in environment "
+                f"{environment.name}. "
+                f"{dep.name} requires R {dep.r_constraint} but "
+                f"environment is for R {environment.r_version}[/error]"
+            )
+            raise InstallationError(
+                f"R version violation for {dep.name}"
+            )
+
+        try:
+            self._download_needed_packages(plan, environment, build_cache)
+            self._install_plan(plan, environment, build_cache)
+        finally:
+            logger.info("Clearing cache for VCS")
+            self._vcs_store.clear()
+
+    def _build_install_plan(self,
+                            deptree: RootDependency,
+                            install_dep_categories: List[str]
+                            ) -> Plan:
+        """
+        The install plan is a list of lists of dependencies to install.
+        Each list is a layer. layers are ordered so that the packages at the
+        bottom of the dependency tree are yielded first.
+        """
+        layers = reversed(traverse_breadth_first_layered(deptree))
+
+        plan = []
+        for layer in layers:
+            layer_plan = []
+            for dep in layer:
+                if (not isinstance(dep, RootDependency) and
+                        set(dep.categories).intersection(set(install_dep_categories))):
+                    if not isinstance(dep, ResolvedDependency):
+                        raise TypeError(
+                            f"Cannot return a plan containing an "
+                            f"unresolved dependency {dep}")
+                    layer_plan.append(dep)
+            plan.append(layer_plan)
+
+        return plan
+
+    def _check_uninstallable_source_deps(self, plan: Plan, r_version: str) -> Union[ResolvedSourceDependency, None]:
+        """
+        Checks if the plan source dependencies can be installed on the given R environment version
+        """
+        # Note: vcs dependencies can change their restriction at a later stage, so we can't investigate
+        # it until we actually git clone it and read the description file
+        for layer in plan:
+            for dep in layer:
+                if isinstance(dep, ResolvedSourceDependency):
+                    if not (dep.r_constraint.allows(Version.parse(r_version))):
+                        return dep
+
+        return None
+
+    def _download_needed_packages(self, plan: Plan, environment: Environment, build_cache: BuildCache):
         # Then do all the downloading required so that we get this over with
         # and we can install freely
-        plan = plan_generator(deptree, install_dep_categories)
-        for dep in plan:
-            if isinstance(dep, ResolvedVCSDependency):
-                self._checkout_from_vcs(dep)
-            elif isinstance(dep, ResolvedSourceDependency):
-                self._ensure_local_source_package(dep)
-            elif isinstance(dep, (RootDependency, ResolvedCoreDependency)):
-                pass
-            else:
-                raise InstallationError(f"Unknown dependency {dep}")
+        for layer in plan:
+            for dep in layer:
+                if isinstance(dep, ResolvedVCSDependency):
+                    # always checkout from vcs, no question asked.
+                    self._checkout_from_vcs(dep)
+                elif isinstance(dep, ResolvedSourceDependency):
+                    package = dep.package
+                    # For source deps, no point in downloading if it's in the cache
+                    # or in the environment
+                    if build_cache.has_build(package.name, package.version):
+                        continue
+                    if environment.has_package(package.name, package.version):
+                        continue
+                    self._ensure_local_source_package(dep)
+                elif isinstance(dep, (RootDependency, ResolvedCoreDependency)):
+                    # Nothing to do for these
+                    pass
+                else:
+                    raise InstallationError(f"Unknown dependency {dep}")
 
-        # Then restart and do all the installing.
-        plan = plan_generator(deptree, install_dep_categories)
-        for dep in plan:
-            if isinstance(dep, ResolvedVCSDependency):
-                self._install_package_from_vcs_store(dep, environment)
-            elif isinstance(dep, ResolvedSourceDependency):
-                self._install_package_from_source(dep, environment)
-            elif isinstance(dep, (RootDependency, ResolvedCoreDependency)):
-                pass
-            else:
-                raise InstallationError(f"Unknown dependency {dep}")
-
-        # it's all gone well, so let's delete the cache
-        logger.info("Clearing cache for VCS")
-        self._vcs_store.clear()
+    def _install_plan(self, plan: Plan, environment: Environment, build_cache: BuildCache):
+        for layer in plan:
+            for dep in layer:
+                if isinstance(dep, ResolvedVCSDependency):
+                    self._install_package_from_vcs_store(dep, environment)
+                elif isinstance(dep, ResolvedSourceDependency):
+                    self._install_package_from_source(
+                        dep, environment, build_cache)
+                elif isinstance(dep, (RootDependency, ResolvedCoreDependency)):
+                    pass
+                else:
+                    raise InstallationError(f"Unknown dependency {dep}")
 
     def _checkout_from_vcs(self, dep: ResolvedVCSDependency):
         logger.info(f"Cloning {dep.name} from VCS {dep.url}@{dep.ref}")
@@ -261,7 +312,8 @@ class Installer:
 
     def _install_package_from_source(self,
                                      dep: ResolvedSourceDependency,
-                                     environment: Environment):
+                                     environment: Environment,
+                                     build_cache: BuildCache):
         package = dep.package
         # already installed
         if environment.has_package(package.name, package.version):
@@ -275,8 +327,6 @@ class Installer:
             quiet=not self._verbose_build,
             use_vanilla=self._use_vanilla
         )
-        version_info = environment.r_version_info
-        cache = BuildCache(version_info["version"], version_info["platform"])
 
         logger.info(
             f"Installing {package.name} {package.version} "
@@ -292,7 +342,7 @@ class Installer:
                 f"[version]{installed_version}[/version] -> "
                 f"[version]{package.version}[/version]"
             )
-        if cache.has_build(package.name, package.version):
+        if build_cache.has_build(package.name, package.version):
             cached_str = "(from cache)"
 
         with console().status(
@@ -308,13 +358,13 @@ class Installer:
                     f"([version]{installed_version}[/version])")
                 executor.remove(package.name)
 
-            if cache.has_build(package.name, package.version):
+            if build_cache.has_build(package.name, package.version):
                 status.update(
                     f"[message]Reinstalling[/message] "
                     f"[version]{package.name}[/version] "
                     f"([version]{package.version}[/version]) "
                     f"(from cache)")
-                cache.restore_build(
+                build_cache.restore_build(
                     package.name,
                     package.version,
                     environment.lib_dir / dep.name)
@@ -328,7 +378,7 @@ class Installer:
                 except ExecutorError as e:
                     raise InstallationError(
                         f"Unable to install {dep.name}: {e}")
-                cache.add_build(
+                build_cache.add_build(
                     package.name, package.version,
                     environment.lib_dir / dep.name
                 )
@@ -341,25 +391,3 @@ class Installer:
             f"[package]{package.name}[/package] "
             f"({version_str}) {cached_str}"
         )
-
-
-def plan_generator(deptree: RootDependency,
-                   install_dep_categories: List[str]
-                   ) -> Generator[ResolvedDependency, None, None]:
-    """
-    The install plan is a list of lists of dependencies to install.
-    Each list is a layer. layers are ordered so that the packages at the
-    bottom of the dependency tree are yielded first.
-    """
-    layers = reversed(traverse_breadth_first_layered(deptree))
-
-    for layer in layers:
-        for dep in layer:
-            if not isinstance(dep, RootDependency) and \
-                    set(dep.categories).intersection(
-                        set(install_dep_categories)):
-                if not isinstance(dep, ResolvedDependency):
-                    raise TypeError(
-                        f"Cannot return a plan containing an "
-                        f"unresolved dependency {dep}")
-                yield dep

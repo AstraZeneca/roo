@@ -58,7 +58,7 @@ class Environment:
         self.name = name
 
     @property
-    def r_version_info(self) -> dict:
+    def r_version_info(self) -> Dict[str, str]:
         with open(self.env_dir / "renv.toml", "r", encoding="utf-8") as f:
             data = toml.load(f)
 
@@ -66,6 +66,10 @@ class Environment:
             "version": data["r_version"],
             "platform": data["r_platform"]
         }
+
+    @property
+    def r_version(self) -> str:
+        return self.r_version_info["version"]
 
     @property
     def env_dir(self) -> pathlib.Path:
