@@ -132,7 +132,8 @@ class Installer:
             layer_plan = []
             for dep in layer:
                 if (not isinstance(dep, RootDependency) and
-                        set(dep.categories).intersection(set(install_dep_categories))):
+                        set(dep.categories).intersection(
+                            set(install_dep_categories))):
                     if not isinstance(dep, ResolvedDependency):
                         raise TypeError(
                             f"Cannot return a plan containing an "
@@ -142,7 +143,10 @@ class Installer:
 
         return plan
 
-    def _check_uninstallable_source_deps(self, plan: Plan, r_version: str) -> Union[ResolvedSourceDependency, None]:
+    def _check_uninstallable_source_deps(self,
+                                         plan: Plan,
+                                         r_version: str
+                                         ) -> Union[ResolvedSourceDependency, None]:
         """
         Checks if the plan source dependencies can be installed on the given R environment version
         """
@@ -156,7 +160,10 @@ class Installer:
 
         return None
 
-    def _download_needed_packages(self, plan: Plan, environment: Environment, build_cache: BuildCache):
+    def _download_needed_packages(self,
+                                  plan: Plan,
+                                  environment: Environment,
+                                  build_cache: BuildCache):
         # Then do all the downloading required so that we get this over with
         # and we can install freely
         for layer in plan:
@@ -179,7 +186,11 @@ class Installer:
                 else:
                     raise InstallationError(f"Unknown dependency {dep}")
 
-    def _install_plan(self, plan: Plan, environment: Environment, build_cache: BuildCache):
+    def _install_plan(self,
+                      plan: Plan,
+                      environment: Environment,
+                      build_cache: BuildCache
+                      ):
         for layer in plan:
             for dep in layer:
                 if isinstance(dep, ResolvedVCSDependency):
