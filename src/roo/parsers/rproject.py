@@ -105,7 +105,7 @@ class RProject:
         This hash is used to determine if the lock file is still synced or not.
         Not all content is relevant to detect change.
         """
-        relevant_content = {
+        relevant_content: dict[str, Any] = {
             "env-id": self.metadata.env_id
         }
 
