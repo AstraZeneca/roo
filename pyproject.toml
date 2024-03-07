@@ -33,7 +33,7 @@ packages = [
 roo = 'roo.cli.__main__:main'
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 requests = "^2.22.0"
 click = "^7.0"
 beautifulsoup4 = "^4.8.2"
