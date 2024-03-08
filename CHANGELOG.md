@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.18.0
+
+- #92 Ensure that the install does not download if all packages are available in the cache
+- #88 Added command roo ci to fail if rproject and lock are desynchronized.
+
 ## 0.17.1
 
 - #82 Fix for some repositories cutting the name, which leads to packages not being detected.
